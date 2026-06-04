@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "58c1dc0f989e25af8209b05bb254a512",
+    "content-hash": "583f06cc67c9bb98fe80df175d043801",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -63,16 +63,16 @@
         },
         {
             "name": "bambamboole/laravel-dav",
-            "version": "0.1.0",
+            "version": "0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bambamboole/laravel-dav.git",
-                "reference": "57fe3da5e460b9ee30e57d44584a278ba6480c89"
+                "reference": "5cd0b502e9d069d5884b0d801b960a5b83223125"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bambamboole/laravel-dav/zipball/57fe3da5e460b9ee30e57d44584a278ba6480c89",
-                "reference": "57fe3da5e460b9ee30e57d44584a278ba6480c89",
+                "url": "https://api.github.com/repos/bambamboole/laravel-dav/zipball/5cd0b502e9d069d5884b0d801b960a5b83223125",
+                "reference": "5cd0b502e9d069d5884b0d801b960a5b83223125",
                 "shasum": ""
             },
             "require": {
@@ -83,9 +83,12 @@
                 "sabre/dav": "^4.7"
             },
             "require-dev": {
+                "amphp/amp": "^3.1",
+                "amphp/http-server": "^3.4",
                 "ext-sockets": "*",
                 "illuminate/process": "^12.0 || ^13.0",
                 "larastan/larastan": "^3.0",
+                "laravel/boost": "^2.4",
                 "laravel/pint": "^1.27",
                 "orchestra/testbench": "^10.0 || ^11.0",
                 "pestphp/pest": "^4.7"
@@ -133,7 +136,7 @@
                 "issues": "https://github.com/bambamboole/laravel-dav/issues",
                 "source": "https://github.com/bambamboole/laravel-dav"
             },
-            "time": "2026-06-04T16:23:19+00:00"
+            "time": "2026-06-04T20:01:46+00:00"
         },
         {
             "name": "brick/math",
