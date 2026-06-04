@@ -1,0 +1,24 @@
+<svg onload="init()" xmlns="http://www.w3.org/2000/svg" aria-label="Almanac Calendar" role="img" viewBox="0 0 512 512">
+<script type="text/ecmascript"><![CDATA[
+function init() {
+  var time = new Date();
+  var locale = "en-US";
+  var DD = String(time.getDate()).padStart(2, "0");
+  var DDD = time.toLocaleString(locale, { weekday: "short" }).toUpperCase();
+  document.getElementById("day").textContent = DD;
+  document.getElementById("weekday").textContent = DDD;
+}
+]]></script>
+<defs>
+  <filter id="shadow" x="-14%" y="-10%" width="128%" height="130%" color-interpolation-filters="sRGB">
+    <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#2a2417" flood-opacity="0.20"/>
+  </filter>
+</defs>
+<g filter="url(#shadow)">
+  <rect x="46" y="86" width="420" height="396" rx="44" fill="#FBF7EC"/>
+  <path d="M46 130a44 44 0 0 1 44-44h332a44 44 0 0 1 44 44v92H46z" fill="#3C4F43"/>
+  <text x="256" y="172" fill="#E7EFE2" font-family="ui-sans-serif, system-ui, sans-serif" font-size="54" font-weight="650" letter-spacing="8" text-anchor="middle">ALMANAC</text>
+  <text id="day" x="256" y="412" fill="#26241B" font-family="ui-serif, Georgia, serif" font-size="200" font-weight="600" text-anchor="middle">04</text>
+  <text id="weekday" x="256" y="462" fill="#4F6043" font-family="ui-sans-serif, system-ui, sans-serif" font-size="48" font-weight="700" letter-spacing="5" text-anchor="middle">THU</text>
+</g>
+</svg>

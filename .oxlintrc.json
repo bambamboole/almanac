@@ -1,0 +1,25 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "react", "import", "jsx-a11y", "unicorn", "oxc"],
+    "env": {
+        "browser": true,
+        "es2024": true
+    },
+    "settings": {
+        "react": {
+            "version": "19.2.7"
+        }
+    },
+    "ignorePatterns": [
+        "node_modules/**",
+        "vendor/**",
+        "public/**",
+        "bootstrap/ssr/**",
+        "resources/js/actions/**",
+        "resources/js/routes/**",
+        "resources/js/wayfinder/**"
+    ],
+    "rules": {
+        "react/react-in-jsx-scope": "off"
+    }
+}

@@ -1,0 +1,137 @@
+<?php
+
+use App\Models\User;
+use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarObject;
+
+test('guests cannot export the calendar', function () {
+    $this->get('/calendar/export')->assertRedirect('/login');
+});
+
+test('authenticated user downloads their calendar as an ics file', function () {
+    $user = User::factory()->create();
+    $calendar = DavCalendar::factory()->for($user)->create();
+
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+        'summary' => 'Planning review',
+        'starts_at' => now()->addDay()->setTime(9, 0),
+        'ends_at' => now()->addDay()->setTime(10, 0),
+    ]);
+
+    $response = $this->actingAs($user)->get('/calendar/export');
+
+    $response->assertOk();
+
+    expect($response->headers->get('Content-Type'))->toContain('text/calendar');
+    expect($response->headers->get('Content-Disposition'))->toContain('attachment')
+        ->toContain('calendar.ics');
+
+    $body = $response->getContent();
+
+    expect($body)->toContain('BEGIN:VCALENDAR')
+        ->toContain('END:VCALENDAR')
+        ->toContain($event->uid);
+});
+
+test('calendar export only includes the current users events', function () {
+    $user = User::factory()->create();
+    $calendar = DavCalendar::factory()->for($user)->create();
+    $ownEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+        'summary' => 'Owned event',
+    ]);
+
+    $otherCalendar = DavCalendar::factory()->create();
+    $otherEvent = DavCalendarObject::factory()->for($otherCalendar, 'calendar')->create([
+        'summary' => 'Other user event',
+    ]);
+
+    $body = $this->actingAs($user)->get('/calendar/export')->getContent();
+
+    expect($body)->toContain($ownEvent->uid)
+        ->not->toContain($otherEvent->uid);
+});
+
+test('calendar export can be scoped to a single calendar', function () {
+    $user = User::factory()->create();
+    $workCalendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Work']);
+    $homeCalendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Home']);
+    $workEvent = DavCalendarObject::factory()->for($workCalendar, 'calendar')->create([
+        'summary' => 'Work event',
+    ]);
+    $homeEvent = DavCalendarObject::factory()->for($homeCalendar, 'calendar')->create([
+        'summary' => 'Home event',
+    ]);
+
+    $response = $this->actingAs($user)->get("/calendar/calendars/{$workCalendar->id}/export");
+
+    $response->assertOk();
+
+    expect($response->headers->get('Content-Disposition'))->toContain('work.ics');
+
+    $body = $response->getContent();
+
+    expect($body)->toContain($workEvent->uid)
+        ->not->toContain($homeEvent->uid);
+});
+
+test('calendar export cannot download another users calendar', function () {
+    $user = User::factory()->create();
+    $otherCalendar = DavCalendar::factory()->create();
+
+    $this->actingAs($user)
+        ->get("/calendar/calendars/{$otherCalendar->id}/export")
+        ->assertForbidden();
+});
+
+test('calendar export returns a valid empty calendar when there are no events', function () {
+    $user = User::factory()->create();
+
+    $body = $this->actingAs($user)->get('/calendar/export')
+        ->assertOk()
+        ->getContent();
+
+    expect($body)->toContain('BEGIN:VCALENDAR')
+        ->toContain('END:VCALENDAR');
+});
+
+test('calendar export de-duplicates shared timezones across objects', function () {
+    $user = User::factory()->create();
+    $calendar = DavCalendar::factory()->for($user)->create();
+
+    $payload = <<<'ICS'
+    BEGIN:VCALENDAR
+    VERSION:2.0
+    PRODID:-//Test//Test//EN
+    BEGIN:VTIMEZONE
+    TZID:Europe/Berlin
+    BEGIN:STANDARD
+    TZOFFSETFROM:+0200
+    TZOFFSETTO:+0100
+    TZNAME:CET
+    DTSTART:19701025T030000
+    END:STANDARD
+    END:VTIMEZONE
+    BEGIN:VEVENT
+    UID:%s
+    DTSTART;TZID=Europe/Berlin:20260601T090000
+    DTEND;TZID=Europe/Berlin:20260601T100000
+    SUMMARY:%s
+    END:VEVENT
+    END:VCALENDAR
+    ICS;
+
+    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+        'uid' => 'event-one',
+        'calendar_data' => str_replace("\n", "\r\n", sprintf($payload, 'event-one', 'First')),
+    ]);
+
+    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+        'uid' => 'event-two',
+        'calendar_data' => str_replace("\n", "\r\n", sprintf($payload, 'event-two', 'Second')),
+    ]);
+
+    $body = $this->actingAs($user)->get('/calendar/export')->getContent();
+
+    expect(substr_count($body, 'TZID:Europe/Berlin'))->toBe(1);
+    expect($body)->toContain('event-one')->toContain('event-two');
+});

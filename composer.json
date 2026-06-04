@@ -1,0 +1,134 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "bambamboole/almanac",
+    "type": "project",
+    "description": "A self-hosted CalDAV/CardDAV calendar and contacts manager.",
+    "keywords": [
+        "caldav",
+        "carddav",
+        "calendar",
+        "contacts",
+        "laravel"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "bambamboole/laravel-dav": "0.1.0",
+        "inertiajs/inertia-laravel": "^3.0",
+        "laravel/chisel": "^0.1.0",
+        "laravel/fortify": "^1.37.2",
+        "laravel/framework": "^13.7",
+        "laravel/reverb": "^1.0",
+        "laravel/tinker": "^3.0",
+        "laravel/wayfinder": "dev-next"
+    },
+    "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.7",
+        "driftingly/rector-laravel": "^2.5",
+        "fakerphp/faker": "^1.24",
+        "larastan/larastan": "^3.0",
+        "laravel/boost": "^2.2",
+        "laravel/pail": "^1.2.5",
+        "laravel/pao": "^1.0.6",
+        "laravel/pint": "^1.27",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.9.3",
+        "pestphp/pest": "^4.7",
+        "pestphp/pest-plugin-browser": "^4.3",
+        "pestphp/pest-plugin-laravel": "^4.1",
+        "rector/rector": "^2.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#c4b5fd,#fb7185,#fdba74\" \"php artisan reverb:start --debug\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=reverb,logs,vite --kill-others"
+        ],
+        "lint": [
+            "pint --parallel"
+        ],
+        "lint:check": [
+            "pint --parallel --test"
+        ],
+        "phpstan": [
+            "phpstan analyse --memory-limit=2G"
+        ],
+        "rector": [
+            "rector process --no-progress-bar"
+        ],
+        "rector:check": [
+            "rector process --dry-run --no-progress-bar"
+        ],
+        "fix": [
+            "@rector",
+            "pint --parallel",
+            "npm run oxfmt",
+            "npm run oxlint:fix",
+            "@phpstan"
+        ],
+        "ci:check": [
+            "Composer\\Config::disableProcessTimeout",
+            "npm run lint:check",
+            "npm run oxfmt:check",
+            "npm run types:check",
+            "@rector:check",
+            "@phpstan",
+            "@test"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@lint:check",
+            "@php artisan test"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "@php artisan boost:update --ansi"
+        ],
+        "post-install-cmd": [
+            "@php artisan boost:update --ansi"
+        ],
+        "post-create-project-cmd": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --graceful --ansi"
+        ],
+        "pre-package-uninstall": [
+            "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": [],
+            "installer": {
+                "post-create-project": []
+            }
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

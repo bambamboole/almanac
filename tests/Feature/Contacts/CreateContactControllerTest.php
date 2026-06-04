@@ -1,0 +1,84 @@
+<?php
+
+use App\Models\User;
+use Bambamboole\LaravelDav\Models\DavAddressBook;
+use Bambamboole\LaravelDav\Models\DavCard;
+
+it('creates a contact for an address book the user owns', function () {
+    $user = User::factory()->create();
+    $book = DavAddressBook::factory()->for($user)->create();
+
+    $this->actingAs($user)
+        ->post('/contacts', [
+            'address_book_id' => $book->id,
+            'full_name' => 'Grace Hopper',
+            'given_name' => 'Grace',
+            'family_name' => 'Hopper',
+            'organization' => 'Compiler Labs',
+            'email' => 'grace@example.com',
+            'phone' => '+1 555 0101',
+        ])
+        ->assertRedirect()
+        ->assertInertiaFlash('toast.type', 'success')
+        ->assertInertiaFlash('toast.message', 'Contact created.');
+
+    $card = DavCard::query()->where('dav_address_book_id', $book->id)->where('full_name', 'Grace Hopper')->firstOrFail();
+    expect($card->card_data)->toContain('grace@example.com')
+        ->and($card->emails)->toContain('grace@example.com')
+        ->and($card->card_data)->toContain('+1 555 0101');
+});
+
+it('forbids creating a contact in another user\'s address book', function () {
+    $user = User::factory()->create();
+    $book = DavAddressBook::factory()->for(User::factory())->create();
+
+    $this->actingAs($user)
+        ->post('/contacts', ['address_book_id' => $book->id, 'full_name' => 'X'])
+        ->assertSessionHasErrors('address_book_id');
+});
+
+it('creates a contact with structured phones and addresses', function () {
+    $user = User::factory()->create();
+    $book = DavAddressBook::factory()->for($user)->create();
+
+    $this->actingAs($user)
+        ->post('/contacts', [
+            'address_book_id' => $book->id,
+            'full_name' => 'Ada Lovelace',
+            'email_addresses' => [
+                ['label' => 'work', 'value' => 'ada@work.example.com', 'types' => ['INTERNET', 'WORK']],
+                ['label' => 'home', 'value' => 'ada@home.example.com', 'types' => ['INTERNET', 'HOME']],
+            ],
+            'phone_numbers' => [
+                ['label' => 'mobile', 'value' => '+1 555 0100', 'types' => ['CELL']],
+                ['label' => 'work', 'value' => '+1 555 0101', 'types' => ['WORK']],
+            ],
+            'addresses' => [
+                [
+                    'label' => 'home',
+                    'street' => '1 Engine Street',
+                    'city' => 'London',
+                    'region' => 'London',
+                    'postal_code' => 'EC1',
+                    'country' => 'United Kingdom',
+                    'types' => ['HOME'],
+                ],
+            ],
+        ])
+        ->assertRedirect();
+
+    $card = DavCard::query()
+        ->where('dav_address_book_id', $book->id)
+        ->where('full_name', 'Ada Lovelace')
+        ->firstOrFail();
+
+    expect($card->emails)->toBe(['ada@work.example.com', 'ada@home.example.com'])
+        ->and($card->phones)->toBe(['+1 555 0100', '+1 555 0101'])
+        ->and($card->email_addresses)->toHaveCount(2)
+        ->and($card->phone_numbers)->toHaveCount(2)
+        ->and($card->addresses)->toHaveCount(1)
+        ->and($card->addresses->first()->street)->toBe('1 Engine Street')
+        ->and($card->card_data)->toContain('ada@work.example.com')
+        ->and($card->card_data)->toContain('+1 555 0101')
+        ->and($card->card_data)->toContain('1 Engine Street');
+});

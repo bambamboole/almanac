@@ -1,0 +1,24 @@
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    "printWidth": 80,
+    "tabWidth": 4,
+    "useTabs": false,
+    "semi": true,
+    "singleQuote": true,
+    "jsxSingleQuote": false,
+    "trailingComma": "all",
+    "bracketSpacing": true,
+    "bracketSameLine": false,
+    "arrowParens": "always",
+    "endOfLine": "lf",
+    "singleAttributePerLine": false,
+    "ignorePatterns": [
+        "node_modules/**",
+        "vendor/**",
+        "public/**",
+        "bootstrap/ssr/**",
+        "resources/js/actions/**",
+        "resources/js/routes/**",
+        "resources/js/wayfinder/**"
+    ]
+}
