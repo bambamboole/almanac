@@ -20,7 +20,7 @@ class DavCalendarPolicy
 
     public function update(User $user, DavCalendar $calendar): bool
     {
-        return $calendar->user_id === $user->id
+        return $calendar->owner_id === $user->id
             || $user->hasPermission(Permission::CollectionsManage);
     }
 

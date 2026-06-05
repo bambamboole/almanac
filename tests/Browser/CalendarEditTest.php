@@ -18,7 +18,7 @@ it('edits a calendar event from the calendar page', function () {
     $this->actingAs($user);
 
     $event = DavCalendarObject::query()
-        ->whereHas('calendar', fn ($q) => $q->where('user_id', $user->id))
+        ->whereHas('calendar', fn ($q) => $q->where('owner_id', $user->id))
         ->firstOrFail();
 
     $page = visit('/calendar');
@@ -48,7 +48,7 @@ it('edits an event start time from the calendar page', function () {
     $this->actingAs($user);
 
     $event = DavCalendarObject::query()
-        ->whereHas('calendar', fn ($q) => $q->where('user_id', $user->id))
+        ->whereHas('calendar', fn ($q) => $q->where('owner_id', $user->id))
         ->firstOrFail();
 
     $page = visit('/calendar');

@@ -14,11 +14,11 @@ it('creates an address book for the current user', function () {
         ->assertInertiaFlash('toast.type', 'success')
         ->assertInertiaFlash('toast.message', 'Address book created.');
 
-    expect(DavAddressBook::query()->where('user_id', $this->user->id)->where('display_name', 'Work')->exists())->toBeTrue();
+    expect(DavAddressBook::query()->where('owner_id', $this->user->id)->where('display_name', 'Work')->exists())->toBeTrue();
 });
 
 it('updates and deletes an owned address book', function () {
-    $book = DavAddressBook::factory()->for($this->user)->create(['display_name' => 'Old']);
+    $book = DavAddressBook::factory()->for($this->user, 'owner')->create(['display_name' => 'Old']);
 
     $this->actingAs($this->user)
         ->patch("/contacts/address-books/{$book->id}", ['display_name' => 'New'])
@@ -38,7 +38,7 @@ it('updates and deletes an owned address book', function () {
 });
 
 it('forbids editing another user\'s address book', function () {
-    $book = DavAddressBook::factory()->for(User::factory())->create();
+    $book = DavAddressBook::factory()->for(User::factory(), 'owner')->create();
 
     $this->actingAs($this->user)->patch("/contacts/address-books/{$book->id}", ['display_name' => 'X'])->assertForbidden();
 });

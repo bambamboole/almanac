@@ -21,7 +21,9 @@ class ContactController extends Controller
 {
     public function store(StoreContactRequest $request, CreateContactCard $action): RedirectResponse
     {
-        $book = DavAddressBook::query()->findOrFail($request->integer('address_book_id'));
+        $book = DavAddressBook::query()
+            ->where('owner_id', $request->user()->id)
+            ->findOrFail($request->integer('address_book_id'));
 
         $action->handle($book, $request->validated('data'));
 
@@ -51,14 +53,14 @@ class ContactController extends Controller
     public function __invoke(Request $request): Response
     {
         $addressBooks = DavAddressBook::query()
-            ->whereBelongsTo($request->user())
+            ->where('owner_id', $request->user()->id)
             ->withCount('cards')
             ->orderBy('display_name')
             ->get(['id', 'display_name', 'description']);
 
         $contacts = Contact::query()
             ->with(['addressBook:id,display_name'])
-            ->whereHas('addressBook', fn ($query) => $query->whereBelongsTo($request->user()))
+            ->whereHas('addressBook', fn ($query) => $query->where('owner_id', $request->user()->id))
             ->get();
 
         return Inertia::render('contacts/index', [

@@ -22,7 +22,7 @@ class StoreContactRequest extends FormRequest
         return [
             'address_book_id' => [
                 'required',
-                Rule::exists('dav_address_books', 'id')->where('user_id', $this->user()->id),
+                Rule::exists('dav_address_books', 'id')->where('owner_id', $this->user()->id),
             ],
             'data' => ['required', 'array'],
             'data.formattedName' => ['required', 'string', 'max:255'],

@@ -5,6 +5,7 @@ use App\Enums\Permission;
 use App\Enums\UserRole;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Illuminate\Support\Facades\Hash;
 
 it('creates a verified admin user', function () {
@@ -23,8 +24,8 @@ it('creates a verified admin user', function () {
         ->and(Hash::check('secret-password', $user->password))->toBeTrue()
         ->and($user->role->name)->toBe(UserRole::Admin->value)
         ->and($user->hasPermission(Permission::cases()[0]))->toBeTrue()
-        ->and(DavCalendar::query()->whereBelongsTo($user)->exists())->toBeFalse()
-        ->and(DavAddressBook::query()->whereBelongsTo($user)->exists())->toBeFalse();
+        ->and(DavCalendar::query()->where('owner_id', $user->id)->exists())->toBeFalse()
+        ->and(DavAddressBook::query()->where('owner_id', $user->id)->exists())->toBeFalse();
 });
 
 it('creates a member user with default dav collections by default', function () {
@@ -36,6 +37,6 @@ it('creates a member user with default dav collections by default', function () 
 
     expect($user->role->name)->toBe(UserRole::Member->value)
         ->and($user->email_verified_at)->toBeNull()
-        ->and(DavCalendar::query()->whereBelongsTo($user)->where('uri', 'personal')->exists())->toBeTrue()
-        ->and(DavAddressBook::query()->whereBelongsTo($user)->where('uri', 'personal')->exists())->toBeTrue();
+        ->and(DavCalendarInstance::query()->where('owner_id', $user->id)->where('uri', 'personal')->exists())->toBeTrue()
+        ->and(DavAddressBook::query()->where('owner_id', $user->id)->where('uri', 'personal')->exists())->toBeTrue();
 });

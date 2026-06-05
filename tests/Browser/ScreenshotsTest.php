@@ -2,15 +2,14 @@
 
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavCard;
 
 it('captures dashboard, calendar and contacts screenshots', function () {
     $user = User::factory()->create(['name' => 'Robin Ellery']);
 
-    $personal = DavCalendar::factory()->for($user)->create(['display_name' => 'Personal', 'color' => '#4F6043']);
-    $work = DavCalendar::factory()->for($user)->create(['display_name' => 'Work', 'color' => '#A8843F']);
+    $personal = davCalendarFor($user, ['display_name' => 'Personal', 'color' => '#4F6043']);
+    $work = davCalendarFor($user, ['display_name' => 'Work', 'color' => '#A8843F']);
 
     $today = today();
     $todayEvents = [
@@ -45,7 +44,7 @@ it('captures dashboard, calendar and contacts screenshots', function () {
         ]))->create();
     }
 
-    $book = DavAddressBook::factory()->for($user)->create(['display_name' => 'People']);
+    $book = DavAddressBook::factory()->for($user, 'owner')->create(['display_name' => 'People']);
     $people = [
         ['Ada Lovelace', 'Analytical Engines', 'ada@example.com'],
         ['Alan Turing', 'Bletchley Park', 'alan@example.com'],

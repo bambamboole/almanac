@@ -13,11 +13,13 @@ class CreateCalendarObject
      */
     public function handle(DavCalendar $calendar, array $data): DavCalendarObject
     {
+        $calendar->loadMissing('ownerInstance');
+
         $object = DavCalendarObject::query()->create([
             'dav_calendar_id' => $calendar->id,
             'data' => DtoFactory::calendarObjectData([
                 'componentType' => 'VEVENT',
-                'timezone' => $calendar->timezone,
+                'timezone' => $calendar->ownerInstance?->timezone,
                 ...$data,
             ]),
         ]);

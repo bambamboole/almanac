@@ -6,7 +6,7 @@ use Bambamboole\LaravelDav\Models\DavCard;
 
 it('edits a contact from the contacts page', function () {
     $user = User::factory()->create();
-    $addressBook = DavAddressBook::factory()->for($user)->create([
+    $addressBook = DavAddressBook::factory()->for($user, 'owner')->create([
         'display_name' => 'Personal',
     ]);
 
@@ -17,7 +17,7 @@ it('edits a contact from the contacts page', function () {
     $this->actingAs($user);
 
     $contact = DavCard::query()
-        ->whereHas('addressBook', fn ($q) => $q->where('user_id', $user->id))
+        ->whereHas('addressBook', fn ($q) => $q->where('owner_id', $user->id))
         ->firstOrFail();
 
     $page = visit('/contacts');
@@ -34,7 +34,7 @@ it('edits a contact from the contacts page', function () {
 
 it('edits a contact email from the UI', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
     DavCard::factory()->for($book, 'addressBook')->state(davData([
         'formattedName' => 'Edit Me',
         'emailAddresses' => [
@@ -56,7 +56,7 @@ it('edits a contact email from the UI', function () {
 
 it('edits structured contact details from the UI', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
     $card = DavCard::factory()->for($book, 'addressBook')->state(davData([
         'formattedName' => 'Details Contact',
         'emailAddresses' => [

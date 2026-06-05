@@ -1,12 +1,11 @@
 <?php
 
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
 it('updates an event from the app', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
     $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Old']))->create();
 
     $this->actingAs($user)
@@ -21,7 +20,7 @@ it('updates an event from the app', function () {
 
 it('returns 409 on a stale etag', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
     $event = DavCalendarObject::factory()->for($calendar, 'calendar')->create();
 
     $this->actingAs($user)
@@ -39,7 +38,7 @@ it('forbids editing another users event', function () {
 
 it('deletes an event from the app', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
     $event = DavCalendarObject::factory()->for($calendar, 'calendar')->create();
 
     $this->actingAs($user)

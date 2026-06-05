@@ -86,11 +86,13 @@ class UserFactory extends Factory
     public function withCalendar(string $name = 'Personal', int|array $events = 0, CarbonPeriod|array|null $period = null): static
     {
         return $this->afterCreating(function (User $user) use ($name, $events, $period): void {
-            $calendar = DavCalendar::factory()->create([
-                'user_id' => $user->id,
-                'display_name' => $name,
-                'uri' => Str::slug($name),
-            ]);
+            $calendar = DavCalendar::factory()
+                ->for($user, 'owner')
+                ->withInstance([
+                    'display_name' => $name,
+                    'uri' => Str::slug($name),
+                ])
+                ->create();
 
             [$start, $end] = $this->resolvePeriod($period);
 
@@ -120,7 +122,7 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function (User $user) use ($contacts): void {
             $addressBook = DavAddressBook::factory()->create([
-                'user_id' => $user->id,
+                'owner_id' => $user->id,
                 'display_name' => 'Personal',
                 'uri' => 'personal',
             ]);

@@ -7,7 +7,7 @@ use Bambamboole\LaravelDav\Models\DavChange;
 
 it('deletes a contact the user owns and records a delete change', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
     $card = DavCard::factory()->for($book, 'addressBook')->create();
 
     $this->actingAs($user)
@@ -22,7 +22,7 @@ it('deletes a contact the user owns and records a delete change', function () {
 
 it('forbids deleting another user\'s contact', function () {
     $user = User::factory()->create();
-    $card = DavCard::factory()->for(DavAddressBook::factory()->for(User::factory()), 'addressBook')->create();
+    $card = DavCard::factory()->for(DavAddressBook::factory()->for(User::factory(), 'owner'), 'addressBook')->create();
 
     $this->actingAs($user)
         ->delete("/contacts/{$card->id}", ['expected_etag' => $card->etag])

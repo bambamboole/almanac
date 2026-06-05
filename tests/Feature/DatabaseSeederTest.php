@@ -2,7 +2,7 @@
 
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
-use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavCard;
 
@@ -11,19 +11,19 @@ test('database seeder creates rerunnable demo life data', function () {
     $this->seed();
 
     $user = User::query()->where('email', 'demo@example.com')->firstOrFail();
-    $calendar = DavCalendar::query()
-        ->whereBelongsTo($user)
+    $calendarInstance = DavCalendarInstance::query()
+        ->where('owner_id', $user->id)
         ->where('uri', 'personal')
         ->firstOrFail();
     $addressBook = DavAddressBook::query()
-        ->whereBelongsTo($user)
+        ->where('owner_id', $user->id)
         ->where('uri', 'personal')
         ->firstOrFail();
 
     expect(User::query()->where('email', 'demo@example.com')->count())->toBe(1)
-        ->and($calendar->display_name)->toBe('Personal')
-        ->and($calendar->objects()->count())->toBe(4)
-        ->and($calendar->objects()->where('is_all_day', true)->count())->toBe(1)
+        ->and($calendarInstance->display_name)->toBe('Personal')
+        ->and($calendarInstance->calendar->objects()->count())->toBe(4)
+        ->and($calendarInstance->calendar->objects()->where('is_all_day', true)->count())->toBe(1)
         ->and($addressBook->display_name)->toBe('Personal')
         ->and($addressBook->cards()->count())->toBe(5)
         ->and(DavCalendarObject::query()->where('uri', 'demo-weekly-planning.ics')->count())->toBe(1)

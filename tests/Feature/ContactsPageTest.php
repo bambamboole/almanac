@@ -15,7 +15,7 @@ test('guests cannot access the contacts page', function () {
 
 test('authenticated user gets the contacts page payload', function () {
     $user = User::factory()->create();
-    $addressBook = DavAddressBook::factory()->for($user)->create([
+    $addressBook = DavAddressBook::factory()->for($user, 'owner')->create([
         'display_name' => 'People',
         'description' => 'Personal contacts',
     ]);
@@ -62,7 +62,7 @@ test('authenticated user gets the contacts page payload', function () {
 
 test('contacts page excludes another users contacts', function () {
     $user = User::factory()->create();
-    $addressBook = DavAddressBook::factory()->for($user)->create();
+    $addressBook = DavAddressBook::factory()->for($user, 'owner')->create();
     $ownedContact = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
         'formattedName' => 'Owned Contact',
     ]))->create();
@@ -82,7 +82,7 @@ test('contacts page excludes another users contacts', function () {
 
 test('contact props do not expose raw card data', function () {
     $user = User::factory()->create();
-    $addressBook = DavAddressBook::factory()->for($user)->create();
+    $addressBook = DavAddressBook::factory()->for($user, 'owner')->create();
 
     DavCard::factory()->for($addressBook, 'addressBook')->create([
         'card_data' => 'BEGIN:VCARD',

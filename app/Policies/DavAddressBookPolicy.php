@@ -20,7 +20,7 @@ class DavAddressBookPolicy
 
     public function update(User $user, DavAddressBook $addressBook): bool
     {
-        return $addressBook->user_id === $user->id
+        return $addressBook->owner_id === $user->id
             || $user->hasPermission(Permission::CollectionsManage);
     }
 

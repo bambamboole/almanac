@@ -28,7 +28,7 @@ class CreateDavCredential
         $credential = DavCredential::query()->updateOrCreate([
             'username' => $username,
         ], [
-            'user_id' => $user->getKey(),
+            'owner_id' => $user->getKey(),
             'name' => $name,
             'secret_hash' => Hash::make($plainSecret),
         ]);

@@ -3,7 +3,6 @@
 use App\Enums\Permission;
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavCard;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -41,7 +40,7 @@ test('team management routes are not available', function () {
 
 it('shows today/week/contact counts and today agenda scoped to the user', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create(['color' => '#4F6043']);
+    $calendar = davCalendarFor($user, ['color' => '#4F6043']);
 
     DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Morning planning']))->create([
         'component_type' => 'VEVENT',
@@ -50,11 +49,11 @@ it('shows today/week/contact counts and today agenda scoped to the user', functi
         'is_all_day' => false,
     ]);
 
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
     DavCard::factory()->count(3)->for($book, 'addressBook')->create();
 
     $other = User::factory()->create();
-    $otherCal = DavCalendar::factory()->for($other)->create();
+    $otherCal = davCalendarFor($other);
     DavCalendarObject::factory()->for($otherCal, 'calendar')->create([
         'component_type' => 'VEVENT',
         'starts_at' => now()->setTime(11, 0),

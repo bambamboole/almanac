@@ -6,7 +6,7 @@ use Bambamboole\LaravelDav\Models\DavCard;
 
 it('renders the contacts page without javascript errors', function () {
     $user = User::factory()->create();
-    $addressBook = DavAddressBook::factory()->for($user)->create([
+    $addressBook = DavAddressBook::factory()->for($user, 'owner')->create([
         'display_name' => 'People',
     ]);
 

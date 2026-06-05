@@ -21,7 +21,7 @@ class DavCredentialController extends Controller
     {
         return Inertia::render('settings/dav', [
             'credentials' => DavCredential::query()
-                ->whereBelongsTo($request->user())
+                ->where('owner_id', $request->user()->id)
                 ->select(['id', 'name', 'username', 'created_at', 'last_used_at'])
                 ->latest()
                 ->get()
@@ -61,7 +61,7 @@ class DavCredentialController extends Controller
      */
     public function destroy(Request $request, DavCredential $credential, RevokeDavCredential $revoke): RedirectResponse
     {
-        abort_unless($credential->user_id === $request->user()->id, 404);
+        abort_unless($credential->owner_id === $request->user()->id, 404);
 
         $revoke->handle($credential);
 

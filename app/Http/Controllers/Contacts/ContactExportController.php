@@ -11,9 +11,6 @@ use Illuminate\Support\Str;
 
 class ContactExportController extends Controller
 {
-    /**
-     * Stream the current user's contacts as a single concatenated .vcf download.
-     */
     public function __invoke(Request $request): Response
     {
         return $this->responseFor($request->user()->addressBooks()->with('cards')->get()->all(), 'contacts.vcf');

@@ -13,9 +13,6 @@ use Sabre\VObject\Reader;
 
 class CalendarExportController extends Controller
 {
-    /**
-     * Stream the current user's calendars merged into a single .ics download.
-     */
     public function __invoke(Request $request): Response
     {
         $calendars = $request->user()->calendars()->with('objects')->get();
@@ -27,7 +24,9 @@ class CalendarExportController extends Controller
     {
         $this->authorize('view', $calendar);
 
-        return $this->responseFor([$calendar->load('objects')], Str::slug($calendar->display_name).'.ics');
+        $calendar->loadMissing('ownerInstance');
+
+        return $this->responseFor([$calendar->load('objects')], Str::slug($calendar->ownerInstance?->display_name ?? 'calendar').'.ics');
     }
 
     /**
@@ -53,9 +52,6 @@ class CalendarExportController extends Controller
     }
 
     /**
-     * Copy the calendar components of a single iCalendar payload into the master
-     * calendar, de-duplicating VTIMEZONE components by their TZID.
-     *
      * @param  array<string, true>  $seenTimezones
      */
     private function mergeObject(VCalendar $master, string $calendarData, array &$seenTimezones): void

@@ -2,7 +2,7 @@
 
 use App\Actions\Dav\CreateDavCredential;
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Illuminate\Support\Carbon;
 
@@ -95,7 +95,11 @@ it('does not allow a dav credential to access another users calendar objects', f
     $attacker = User::factory()->create();
     app(CreateDavCredential::class)->handle($owner, 'Laptop');
     $attackerCredential = app(CreateDavCredential::class)->handle($attacker, 'Phone');
-    $ownerCalendar = DavCalendar::query()->whereBelongsTo($owner, 'user')->where('uri', 'personal')->firstOrFail();
+    $ownerCalendar = DavCalendarInstance::query()
+        ->where('owner_id', $owner->id)
+        ->where('uri', 'personal')
+        ->firstOrFail()
+        ->calendar;
     $existingObject = DavCalendarObject::factory()->for($ownerCalendar, 'calendar')
         ->state(davData(['summary' => 'Private']))
         ->create(['uri' => 'event-1.ics']);

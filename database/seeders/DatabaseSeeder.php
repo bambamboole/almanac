@@ -47,7 +47,7 @@ class DatabaseSeeder extends Seeder
     private function seedDavCredential(User $user): void
     {
         DavCredential::query()->create([
-            'user_id' => $user->id,
+            'owner_id' => $user->id,
             'name' => 'Seeded credential',
             'username' => self::DavUsername,
             'secret_hash' => Hash::make(self::DavPassword),

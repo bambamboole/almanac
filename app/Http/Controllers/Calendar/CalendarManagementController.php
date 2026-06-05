@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Calendar\StoreCalendarRequest;
 use App\Http\Requests\Calendar\UpdateCalendarRequest;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -16,15 +17,20 @@ class CalendarManagementController extends Controller
     {
         $data = $request->validated();
 
-        DavCalendar::query()->create([
-            'user_id' => $request->user()->id,
+        $calendar = DavCalendar::query()->create([
+            'owner_id' => $request->user()->id,
+            'components' => $this->normalizeComponents($data['components']),
+            'sync_token' => 1,
+        ]);
+
+        $calendar->instances()->create([
+            'owner_id' => $request->user()->id,
             'uri' => Str::slug($data['display_name']) ?: (string) Str::uuid(),
+            'access' => DavCalendarInstance::AccessOwner,
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,
             'color' => $data['color'] ?? null,
             'timezone' => $data['timezone'] ?? null,
-            'components' => $this->normalizeComponents($data['components']),
-            'sync_token' => 1,
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Calendar created.')]);
@@ -37,11 +43,14 @@ class CalendarManagementController extends Controller
         $data = $request->validated();
 
         $calendar->update([
+            'components' => $this->normalizeComponents($data['components']),
+        ]);
+
+        $calendar->ownerInstance()->firstOrFail()->update([
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,
             'color' => $data['color'] ?? null,
             'timezone' => $data['timezone'] ?? null,
-            'components' => $this->normalizeComponents($data['components']),
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Calendar updated.')]);

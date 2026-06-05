@@ -17,16 +17,18 @@ class DashboardController extends Controller
         $startOfTomorrow = now()->addDay()->startOfDay();
 
         $userEvents = fn () => CalendarEvent::query()
-            ->whereHas('calendar', fn ($query) => $query->whereBelongsTo($user))
+            ->whereHas('calendar', fn ($query) => $query->where('owner_id', $user->id))
             ->where('component_type', 'VEVENT');
 
         $todayEvents = $userEvents()
-            ->with(['calendar:id,display_name,color'])
+            ->with(['calendar.ownerInstance:id,dav_calendar_id,display_name,color'])
             ->where('starts_at', '>=', $startOfToday)
             ->where('starts_at', '<', $startOfTomorrow)
             ->orderBy('starts_at')
             ->limit(8)
-            ->get();
+            ->get()
+            ->map(fn (CalendarEvent $event): array => $this->eventPayload($event))
+            ->values();
 
         return Inertia::render('dashboard', [
             'todayEvents' => $todayEvents,
@@ -40,9 +42,26 @@ class DashboardController extends Controller
                     ->where('starts_at', '<', now()->startOfWeek()->addWeek())
                     ->count(),
                 'contactCount' => DavCard::query()
-                    ->whereHas('addressBook', fn ($query) => $query->whereBelongsTo($user))
+                    ->whereHas('addressBook', fn ($query) => $query->where('owner_id', $user->id))
                     ->count(),
             ],
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function eventPayload(CalendarEvent $event): array
+    {
+        $payload = $event->toArray();
+        $instance = $event->calendar->ownerInstance;
+
+        $payload['calendar'] = [
+            'id' => $event->calendar->id,
+            'display_name' => $instance?->display_name ?? 'Calendar',
+            'color' => $instance?->color,
+        ];
+
+        return $payload;
     }
 }

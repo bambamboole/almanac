@@ -6,7 +6,7 @@ use Bambamboole\LaravelDav\Models\DavCard;
 
 it('creates a contact for an address book the user owns', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
 
     $this->actingAs($user)
         ->post('/contacts', [
@@ -37,7 +37,7 @@ it('creates a contact for an address book the user owns', function () {
 
 it('forbids creating a contact in another user\'s address book', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for(User::factory())->create();
+    $book = DavAddressBook::factory()->for(User::factory(), 'owner')->create();
 
     $this->actingAs($user)
         ->post('/contacts', ['address_book_id' => $book->id, 'data' => ['formattedName' => 'X']])
@@ -46,7 +46,7 @@ it('forbids creating a contact in another user\'s address book', function () {
 
 it('creates a contact with structured phones and addresses', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
 
     $this->actingAs($user)
         ->post('/contacts', [

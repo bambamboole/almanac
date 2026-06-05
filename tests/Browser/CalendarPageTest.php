@@ -1,12 +1,11 @@
 <?php
 
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
 it('groups all-day and timed events on the same day together', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create([
+    $calendar = davCalendarFor($user, [
         'display_name' => 'Personal',
     ]);
     $eventDate = today();

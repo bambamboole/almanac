@@ -17,7 +17,7 @@ class AddressBookManagementController extends Controller
         $data = $request->validated();
 
         DavAddressBook::query()->create([
-            'user_id' => $request->user()->id,
+            'owner_id' => $request->user()->id,
             'uri' => Str::slug($data['display_name']) ?: (string) Str::uuid(),
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,

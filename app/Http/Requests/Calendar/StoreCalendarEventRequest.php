@@ -20,7 +20,7 @@ class StoreCalendarEventRequest extends FormRequest
         return [
             'calendar_id' => [
                 'required',
-                Rule::exists('dav_calendars', 'id')->where('user_id', $this->user()->id),
+                Rule::exists('dav_calendars', 'id')->where('owner_id', $this->user()->id),
             ],
             'data' => ['required', 'array'],
             'data.summary' => ['required', 'string', 'max:255'],

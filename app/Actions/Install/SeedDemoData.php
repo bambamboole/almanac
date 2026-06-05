@@ -13,11 +13,13 @@ class SeedDemoData
 {
     public function handle(User $user): void
     {
-        $calendar = DavCalendar::factory()->create([
-            'user_id' => $user->id,
-            'display_name' => 'Personal',
-            'uri' => 'personal',
-        ]);
+        $calendar = DavCalendar::factory()
+            ->for($user, 'owner')
+            ->withInstance([
+                'display_name' => 'Personal',
+                'uri' => 'personal',
+            ])
+            ->create();
 
         foreach ($this->demoEvents(Carbon::today('Europe/Berlin')) as $event) {
             DavCalendarObject::factory()->create([
@@ -28,7 +30,7 @@ class SeedDemoData
         }
 
         $addressBook = DavAddressBook::factory()->create([
-            'user_id' => $user->id,
+            'owner_id' => $user->id,
             'display_name' => 'Personal',
             'uri' => 'personal',
         ]);

@@ -6,7 +6,7 @@ use Bambamboole\LaravelDav\Models\DavCard;
 
 it('overwrites the email/phone set with structured data', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
 
     $card = DavCard::factory()->for($book, 'addressBook')->state(davData([
         'formattedName' => 'Alan Turing',

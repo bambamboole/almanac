@@ -226,7 +226,7 @@ it('maps apple contact fields into typed eloquent value objects', function () {
 it('serializes typed contact value objects into carddav vcard fields', function () {
     $user = User::factory()->create();
     $credential = app(CreateDavCredential::class)->handle($user, 'Phone');
-    $addressBook = DavAddressBook::query()->whereBelongsTo($user, 'user')->where('uri', 'personal')->firstOrFail();
+    $addressBook = DavAddressBook::query()->whereBelongsTo($user, 'owner')->where('uri', 'personal')->firstOrFail();
     $authHeader = cardDavAuthHeader($credential['username'], $credential['plainSecret']);
     $card = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
         'uid' => 'typed-contact',
@@ -306,7 +306,7 @@ it('serializes typed contact value objects into carddav vcard fields', function 
 it('increments the address book change token after card mutations', function () {
     $user = User::factory()->create();
     $credential = app(CreateDavCredential::class)->handle($user, 'Phone');
-    $addressBook = DavAddressBook::query()->whereBelongsTo($user, 'user')->where('uri', 'personal')->firstOrFail();
+    $addressBook = DavAddressBook::query()->whereBelongsTo($user, 'owner')->where('uri', 'personal')->firstOrFail();
     $path = '/dav/addressbooks/'.$user->id.'/personal/contact-1.vcf';
     $authHeader = cardDavAuthHeader($credential['username'], $credential['plainSecret']);
     $originalPayload = cardDavPayload([
@@ -340,7 +340,7 @@ it('does not allow a dav credential to access another users contact cards', func
     $attacker = User::factory()->create();
     app(CreateDavCredential::class)->handle($owner, 'Laptop');
     $attackerCredential = app(CreateDavCredential::class)->handle($attacker, 'Phone');
-    $ownerAddressBook = DavAddressBook::query()->whereBelongsTo($owner, 'user')->where('uri', 'personal')->firstOrFail();
+    $ownerAddressBook = DavAddressBook::query()->whereBelongsTo($owner, 'owner')->where('uri', 'personal')->firstOrFail();
     $existingCard = DavCard::factory()->for($ownerAddressBook, 'addressBook')->state(davData([
         'formattedName' => 'Private',
     ]))->create([

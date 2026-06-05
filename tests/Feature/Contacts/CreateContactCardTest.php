@@ -7,7 +7,7 @@ use Bambamboole\LaravelDav\Models\DavChange;
 
 it('creates a contact, serializes a vCard, and records an added change', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create(['sync_token' => 1]);
+    $book = DavAddressBook::factory()->for($user, 'owner')->create(['sync_token' => 1]);
 
     $card = app(CreateContactCard::class)->handle($book, [
         'formattedName' => 'Ada Lovelace',

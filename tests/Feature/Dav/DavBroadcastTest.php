@@ -58,7 +58,7 @@ it('broadcasts on the owning user private dav channel', function () {
     $calendar = DavCalendar::factory()->create();
 
     $event = new DavCollectionChanged(
-        userId: $calendar->user_id,
+        userId: $calendar->owner_id,
         collectionType: 'calendar',
         collectionId: $calendar->id,
         resourceUri: 'event-1.ics',
@@ -67,7 +67,7 @@ it('broadcasts on the owning user private dav channel', function () {
     );
 
     expect($event->broadcastOn())->toBeInstanceOf(PrivateChannel::class)
-        ->and($event->broadcastOn()->name)->toBe('private-dav.'.$calendar->user_id)
+        ->and($event->broadcastOn()->name)->toBe('private-dav.'.$calendar->owner_id)
         ->and($event->broadcastAs())->toBe('dav.changed')
         ->and($event->broadcastWith())->toMatchArray([
             'type' => 'calendar',

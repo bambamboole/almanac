@@ -8,10 +8,11 @@ it('creates a named calendar with a given number of events', function () {
     $user = User::factory()->withCalendar('Work', 3)->create();
 
     $calendar = $user->calendars()->sole();
+    $calendarInstance = $calendar->ownerInstance;
 
     expect($user->calendars)->toHaveCount(1)
-        ->and($calendar->display_name)->toBe('Work')
-        ->and($calendar->uri)->toBe('work')
+        ->and($calendarInstance?->display_name)->toBe('Work')
+        ->and($calendarInstance?->uri)->toBe('work')
         ->and($calendar->objects)->toHaveCount(3);
 });
 
@@ -55,7 +56,7 @@ it('supports multiple calendars on one user', function () {
         ->create();
 
     expect($user->calendars)->toHaveCount(2)
-        ->and($user->calendars->pluck('display_name')->all())->toContain('Work', 'Personal');
+        ->and($user->calendarInstances->pluck('display_name')->all())->toContain('Work', 'Personal');
 });
 
 it('creates a personal address book with a given number of contacts', function () {

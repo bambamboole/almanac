@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\User;
+use Bambamboole\LaravelDav\Models\DavCalendar;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Arr;
 use Illuminate\Testing\TestResponse;
 use Sabre\VObject\Component\VCalendar;
 use Sabre\VObject\Component\VCard;
@@ -16,6 +20,39 @@ use Tests\TestCase;
 function davData(array $overrides): Closure
 {
     return fn (array $attributes): array => ['data' => [...$attributes['data'], ...$overrides]];
+}
+
+function davCalendarFor(User|Factory $owner, array $attributes = []): DavCalendar
+{
+    return DavCalendar::factory()
+        ->for($owner, 'owner')
+        ->withInstance(calendarInstanceAttributes($attributes))
+        ->create(calendarAttributes($attributes));
+}
+
+function davCalendar(array $attributes = []): DavCalendar
+{
+    return DavCalendar::factory()
+        ->withInstance(calendarInstanceAttributes($attributes))
+        ->create(calendarAttributes($attributes));
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ * @return array<string, mixed>
+ */
+function calendarAttributes(array $attributes): array
+{
+    return Arr::only($attributes, ['owner_id', 'components', 'sync_token']);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ * @return array<string, mixed>
+ */
+function calendarInstanceAttributes(array $attributes): array
+{
+    return Arr::except($attributes, ['owner_id', 'components', 'sync_token']);
 }
 
 function calDavAuthHeader(string $username, string $password): string

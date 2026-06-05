@@ -67,12 +67,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/bambamboole/laravel-dav.git",
-                "reference": "23f4832a93fef023385680bd966ea16fc310a463"
+                "reference": "939355714afdf9a221b56a5e7154ed7421a2b67e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bambamboole/laravel-dav/zipball/23f4832a93fef023385680bd966ea16fc310a463",
-                "reference": "23f4832a93fef023385680bd966ea16fc310a463",
+                "url": "https://api.github.com/repos/bambamboole/laravel-dav/zipball/939355714afdf9a221b56a5e7154ed7421a2b67e",
+                "reference": "939355714afdf9a221b56a5e7154ed7421a2b67e",
                 "shasum": ""
             },
             "require": {
@@ -137,7 +137,7 @@
                 "issues": "https://github.com/bambamboole/laravel-dav/issues",
                 "source": "https://github.com/bambamboole/laravel-dav"
             },
-            "time": "2026-06-05T13:54:17+00:00"
+            "time": "2026-06-05T23:29:26+00:00"
         },
         {
             "name": "brick/math",

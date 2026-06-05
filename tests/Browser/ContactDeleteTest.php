@@ -6,7 +6,7 @@ use Bambamboole\LaravelDav\Models\DavCard;
 
 it('deletes a contact from the UI', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
     DavCard::factory()->for($book, 'addressBook')->state(davData(['formattedName' => 'Temp Person']))->create();
 
     $this->actingAs($user);

@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCredential;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -52,10 +52,10 @@ it('installs end-to-end with sqlite and demo data', function () {
         ->assertExitCode(0);
 
     $admin = User::query()->where('email', 'demo@example.com')->firstOrFail();
-    $credential = DavCredential::query()->whereBelongsTo($admin)->where('username', 'demo')->firstOrFail();
+    $credential = DavCredential::query()->whereBelongsTo($admin, 'owner')->where('username', 'demo')->firstOrFail();
 
     expect($admin->role->name)->toBe('admin')
-        ->and(DavCalendar::query()->whereBelongsTo($admin)->where('uri', 'personal')->firstOrFail()->objects()->count())->toBe(4)
+        ->and(DavCalendarInstance::query()->where('owner_id', $admin->id)->where('uri', 'personal')->firstOrFail()->calendar->objects()->count())->toBe(4)
         ->and(Hash::check('password', $credential->secret_hash))->toBeTrue()
         ->and(file_get_contents($envPath))->toContain('APP_TIMEZONE=Europe/Berlin')
         ->and(file_get_contents($envPath))->toContain('APP_URL=https://almanac.test')

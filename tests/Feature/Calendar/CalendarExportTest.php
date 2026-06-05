@@ -10,7 +10,7 @@ test('guests cannot export the calendar', function () {
 
 test('authenticated user downloads their calendar as an ics file', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
 
     $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Planning review']))->create([
         'starts_at' => now()->addDay()->setTime(9, 0),
@@ -34,7 +34,7 @@ test('authenticated user downloads their calendar as an ics file', function () {
 
 test('calendar export only includes the current users events', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
     $ownEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Owned event']))->create();
 
     $otherCalendar = DavCalendar::factory()->create();
@@ -48,8 +48,8 @@ test('calendar export only includes the current users events', function () {
 
 test('calendar export can be scoped to a single calendar', function () {
     $user = User::factory()->create();
-    $workCalendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Work']);
-    $homeCalendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Home']);
+    $workCalendar = davCalendarFor($user, ['display_name' => 'Work']);
+    $homeCalendar = davCalendarFor($user, ['display_name' => 'Home']);
     $workEvent = DavCalendarObject::factory()->for($workCalendar, 'calendar')->state(davData(['summary' => 'Work event']))->create();
     $homeEvent = DavCalendarObject::factory()->for($homeCalendar, 'calendar')->state(davData(['summary' => 'Home event']))->create();
 
@@ -87,7 +87,7 @@ test('calendar export returns a valid empty calendar when there are no events', 
 
 test('calendar export de-duplicates shared timezones across objects', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
 
     $payload = <<<'ICS'
     BEGIN:VCALENDAR

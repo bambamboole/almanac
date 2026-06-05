@@ -1,12 +1,11 @@
 <?php
 
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
 it('updates event time and status through the edit endpoint', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
     $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Old']))->create();
 
     $this->actingAs($user)

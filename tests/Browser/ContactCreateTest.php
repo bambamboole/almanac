@@ -6,7 +6,7 @@ use Bambamboole\LaravelDav\Models\DavCard;
 
 it('creates a contact from the contacts UI', function () {
     $user = User::factory()->create();
-    DavAddressBook::factory()->for($user)->create(['display_name' => 'Personal']);
+    DavAddressBook::factory()->for($user, 'owner')->create(['display_name' => 'Personal']);
 
     $this->actingAs($user);
     $page = visit('/contacts');
@@ -47,5 +47,5 @@ it('creates an address book from the contacts UI', function () {
         ->click('Create address book')
         ->assertSee('Family');
 
-    expect(DavAddressBook::query()->where('user_id', $user->id)->where('display_name', 'Family')->exists())->toBeTrue();
+    expect(DavAddressBook::query()->where('owner_id', $user->id)->where('display_name', 'Family')->exists())->toBeTrue();
 });

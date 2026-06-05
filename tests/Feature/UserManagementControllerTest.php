@@ -3,7 +3,7 @@
 use App\Enums\Permission;
 use App\Models\Role;
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Inertia\Testing\AssertableInertia;
 
 beforeEach(function () {
@@ -56,7 +56,7 @@ it('creates a user with default collections provisioned', function () {
 
     $user = User::query()->where('email', 'new@example.com')->firstOrFail();
     expect($user->role->name)->toBe('member')
-        ->and(DavCalendar::query()->where('user_id', $user->id)->exists())->toBeTrue();
+        ->and(DavCalendarInstance::query()->where('owner_id', $user->id)->exists())->toBeTrue();
 });
 
 it('promotes a user to admin on update', function () {

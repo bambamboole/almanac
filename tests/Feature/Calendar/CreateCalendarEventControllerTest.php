@@ -1,12 +1,11 @@
 <?php
 
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
 it('creates an event for a calendar the user owns', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
 
     $this->actingAs($user)
         ->post('/calendar/events', [
@@ -28,7 +27,7 @@ it('creates an event for a calendar the user owns', function () {
 
 it('forbids creating an event on another user\'s calendar', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for(User::factory())->create();
+    $calendar = davCalendarFor(User::factory());
 
     $this->actingAs($user)
         ->post('/calendar/events', [

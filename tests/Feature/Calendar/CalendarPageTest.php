@@ -15,7 +15,7 @@ test('guests cannot access the calendar page', function () {
 
 test('authenticated user gets the calendar page payload', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create([
+    $calendar = davCalendarFor($user, [
         'display_name' => 'Personal',
         'color' => '#2563eb',
     ]);
@@ -62,7 +62,7 @@ test('authenticated user gets the calendar page payload', function () {
 
 test('calendar page exposes date-only fields for all-day events', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
 
     DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Conference']))->create([
         'starts_at' => '2026-06-03 00:00:00',
@@ -82,7 +82,7 @@ test('calendar page exposes date-only fields for all-day events', function () {
 
 test('calendar page excludes another users events', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
     $otherCalendar = DavCalendar::factory()->create();
 
     $ownedEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Owned event']))->create([
@@ -106,7 +106,7 @@ test('calendar page excludes another users events', function () {
 
 test('calendar page excludes events outside the planned window', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
     $insideWindow = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Inside window']))->create([
         'starts_at' => now()->addDay(),
         'ends_at' => now()->addDay()->addHour(),
@@ -133,7 +133,7 @@ test('calendar page excludes events outside the planned window', function () {
 
 test('calendar event props do not expose raw calendar data', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
 
     DavCalendarObject::factory()->for($calendar, 'calendar')->create([
         'starts_at' => now()->addDay(),

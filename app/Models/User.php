@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Permission;
 use Bambamboole\LaravelDav\Contracts\DavOwner;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -41,6 +41,8 @@ use Laravel\Passkeys\Passkey;
  * @property-read int|null $address_books_count
  * @property-read Collection<int, DavCalendar> $calendars
  * @property-read int|null $calendars_count
+ * @property-read Collection<int, DavCalendarInstance> $calendarInstances
+ * @property-read int|null $calendar_instances_count
  * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
  * @property-read Collection<int, Passkey> $passkeys
@@ -92,7 +94,15 @@ class User extends Authenticatable implements DavOwner, PasskeyUser
      */
     public function calendars(): HasMany
     {
-        return $this->hasMany(DavCalendar::class);
+        return $this->hasMany(DavCalendar::class, 'owner_id');
+    }
+
+    /**
+     * @return HasMany<DavCalendarInstance, $this>
+     */
+    public function calendarInstances(): HasMany
+    {
+        return $this->hasMany(DavCalendarInstance::class, 'owner_id');
     }
 
     /**
@@ -100,7 +110,7 @@ class User extends Authenticatable implements DavOwner, PasskeyUser
      */
     public function addressBooks(): HasMany
     {
-        return $this->hasMany(DavAddressBook::class);
+        return $this->hasMany(DavAddressBook::class, 'owner_id');
     }
 
     /**
