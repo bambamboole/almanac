@@ -26,11 +26,11 @@ class DashboardController extends Controller
             ->where('starts_at', '<', $startOfTomorrow)
             ->orderBy('starts_at')
             ->limit(8)
-            ->get(['id', 'dav_calendar_id', 'summary', 'location', 'starts_at', 'ends_at', 'is_all_day'])
+            ->get()
             ->map(fn (DavCalendarObject $event): array => [
                 'id' => $event->id,
-                'summary' => $event->summary,
-                'location' => $event->location,
+                'summary' => $event->data->summary,
+                'location' => $event->data->location,
                 'starts_at' => $event->starts_at->toISOString(),
                 'ends_at' => $event->ends_at?->toISOString(),
                 'all_day' => $event->is_all_day,

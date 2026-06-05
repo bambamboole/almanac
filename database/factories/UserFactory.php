@@ -80,7 +80,7 @@ class UserFactory extends Factory
      * explicit start fall uniformly inside the given period (defaults to the
      * next 30 days).
      *
-     * @param  int|array<int, array<string, mixed>>  $events
+     * @param  int|array<int, array<string, mixed>>  $events  CalendarObjectData overrides per event.
      * @param  CarbonPeriod|array{0: mixed, 1: mixed}|null  $period
      */
     public function withCalendar(string $name = 'Personal', int|array $events = 0, CarbonPeriod|array|null $period = null): static
@@ -94,17 +94,16 @@ class UserFactory extends Factory
 
             [$start, $end] = $this->resolvePeriod($period);
 
-            foreach ($this->normalizeItems($events) as $attributes) {
-                if (! array_key_exists('starts_at', $attributes)) {
+            foreach ($this->normalizeItems($events) as $data) {
+                if (! array_key_exists('startsAt', $data)) {
                     $startsAt = $this->randomMomentBetween($start, $end);
-                    $attributes['starts_at'] = $startsAt;
-                    $attributes['ends_at'] ??= $startsAt->copy()->addHour();
+                    $data['startsAt'] = $startsAt;
+                    $data['endsAt'] ??= $startsAt->copy()->addHour();
                 }
 
-                DavCalendarObject::factory()->create([
-                    'dav_calendar_id' => $calendar->id,
-                    ...$attributes,
-                ]);
+                DavCalendarObject::factory()
+                    ->state(fn (array $attributes): array => ['data' => [...$attributes['data'], ...$data]])
+                    ->create(['dav_calendar_id' => $calendar->id]);
             }
         });
     }
@@ -115,7 +114,7 @@ class UserFactory extends Factory
      * Pass an int to generate that many random contacts, or a list of
      * attribute-override maps to create specific contacts.
      *
-     * @param  int|array<int, array<string, mixed>>  $contacts
+     * @param  int|array<int, array<string, mixed>>  $contacts  ContactData overrides per contact.
      */
     public function withContacts(int|array $contacts = 0): static
     {
@@ -126,11 +125,10 @@ class UserFactory extends Factory
                 'uri' => 'personal',
             ]);
 
-            foreach ($this->normalizeItems($contacts) as $attributes) {
-                DavCard::factory()->create([
-                    'dav_address_book_id' => $addressBook->id,
-                    ...$attributes,
-                ]);
+            foreach ($this->normalizeItems($contacts) as $data) {
+                DavCard::factory()
+                    ->state(fn (array $attributes): array => ['data' => [...$attributes['data'], ...$data]])
+                    ->create(['dav_address_book_id' => $addressBook->id]);
             }
         });
     }

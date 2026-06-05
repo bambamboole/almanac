@@ -1,8 +1,8 @@
 <?php
 
-use App\Exceptions\StaleEntryException;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use Bambamboole\LaravelDav\Exceptions\StaleDavResourceException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -30,11 +30,13 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*'),
         );
 
-        $exceptions->render(function (StaleEntryException $e, Request $request) {
+        $exceptions->render(function (StaleDavResourceException $e, Request $request) {
+            $message = __('This entry was changed elsewhere. Reload and try again.');
+
             if ($request->expectsJson()) {
-                return response()->json(['message' => $e->getMessage()], 409);
+                return response()->json(['message' => $message], 409);
             }
 
-            return back()->withErrors(['conflict' => $e->getMessage()]);
+            return back()->withErrors(['conflict' => $message]);
         });
     })->create();

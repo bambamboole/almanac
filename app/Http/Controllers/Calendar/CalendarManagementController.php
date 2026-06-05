@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Calendar\StoreCalendarRequest;
 use App\Http\Requests\Calendar\UpdateCalendarRequest;
 use Bambamboole\LaravelDav\Models\DavCalendar;
-use Bambamboole\LaravelDav\Parsing\CollectionUri;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class CalendarManagementController extends Controller
@@ -18,7 +18,7 @@ class CalendarManagementController extends Controller
 
         DavCalendar::query()->create([
             'user_id' => $request->user()->id,
-            'uri' => CollectionUri::fromDisplayName($data['display_name']),
+            'uri' => Str::slug($data['display_name']) ?: (string) Str::uuid(),
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,
             'color' => $data['color'] ?? null,

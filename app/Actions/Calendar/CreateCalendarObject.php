@@ -2,37 +2,29 @@
 
 namespace App\Actions\Calendar;
 
-use App\Actions\Concerns\RecordsDavChanges;
+use App\Actions\Calendar\Concerns\MapsEventFields;
 use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Bambamboole\LaravelDav\Support\DtoFactory;
 
 class CreateCalendarObject
 {
-    use RecordsDavChanges;
+    use MapsEventFields;
 
     /**
      * @param  array<string, mixed>  $fields
      */
     public function handle(DavCalendar $calendar, array $fields): DavCalendarObject
     {
-        return DB::transaction(function () use ($calendar, $fields): DavCalendarObject {
-            $uid = (string) Str::uuid();
-
-            $object = DavCalendarObject::query()->create([
-                'dav_calendar_id' => $calendar->id,
-                'uri' => $uid.'.ics',
-                'uid' => $uid,
-                'component_type' => 'VEVENT',
+        $object = DavCalendarObject::query()->create([
+            'dav_calendar_id' => $calendar->id,
+            'data' => DtoFactory::calendarObjectData([
+                'componentType' => 'VEVENT',
                 'timezone' => $calendar->timezone,
-                'last_modified_at' => now(),
-                ...$fields,
-            ]);
+                ...$this->mapEventFields($fields),
+            ]),
+        ]);
 
-            $this->recordCalendarChange($calendar, $object->uri, self::OperationAdd);
-
-            return $object->refresh();
-        });
+        return $object->refresh();
     }
 }

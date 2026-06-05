@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Contacts\DeleteContactRequest;
 use App\Http\Requests\Contacts\StoreContactRequest;
 use App\Http\Requests\Contacts\UpdateContactRequest;
+use Bambamboole\LaravelDav\Dto\Contact\ContactPostalAddress;
+use Bambamboole\LaravelDav\Dto\Contact\LabeledContactValue;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
 use Bambamboole\LaravelDav\Models\DavCard;
 use Illuminate\Http\RedirectResponse;
@@ -66,30 +68,12 @@ class ContactController extends Controller
         $contacts = DavCard::query()
             ->with(['addressBook:id,display_name,user_id'])
             ->whereHas('addressBook', fn ($query) => $query->whereBelongsTo($request->user()))
-            ->orderBy('full_name')
-            ->orderBy('family_name')
-            ->get([
-                'id',
-                'dav_address_book_id',
-                'full_name',
-                'given_name',
-                'family_name',
-                'organization',
-                'job_title',
-                'nickname',
-                'note',
-                'emails',
-                'phones',
-                'email_addresses',
-                'phone_numbers',
-                'addresses',
-                'etag',
-                'last_modified_at',
-            ])
+            ->get()
             ->map(function (DavCard $contact): array {
-                $emails = collect($contact->emails ?? [])->filter()->values();
-                $phones = collect($contact->phones ?? [])->filter()->values();
-                $displayName = $contact->full_name ?: ($emails->first() ?: ($phones->first() ?: 'Unnamed contact'));
+                $data = $contact->data;
+                $emails = collect($data->emailAddresses)->map(fn (LabeledContactValue $email): string => $email->value)->filter()->values();
+                $phones = collect($data->phoneNumbers)->map(fn (LabeledContactValue $phone): string => $phone->value)->filter()->values();
+                $displayName = $data->formattedName ?: ($emails->first() ?: ($phones->first() ?: 'Unnamed contact'));
 
                 return [
                     'id' => $contact->id,
@@ -99,24 +83,26 @@ class ContactController extends Controller
                         'name' => $contact->addressBook->display_name,
                     ],
                     'display_name' => $displayName,
-                    'full_name' => $contact->full_name,
-                    'given_name' => $contact->given_name,
-                    'family_name' => $contact->family_name,
-                    'organization' => $contact->organization,
-                    'job_title' => $contact->job_title,
-                    'nickname' => $contact->nickname,
-                    'note' => $contact->note,
+                    'full_name' => $data->formattedName,
+                    'given_name' => $data->givenName,
+                    'family_name' => $data->familyName,
+                    'organization' => $data->organization,
+                    'job_title' => $data->jobTitle,
+                    'nickname' => $data->nickname,
+                    'note' => $data->note,
                     'etag' => $contact->etag,
                     'emails' => $emails->all(),
                     'phones' => $phones->all(),
-                    'email_addresses' => $contact->email_addresses->toArray(),
-                    'phone_numbers' => $contact->phone_numbers->toArray(),
-                    'addresses' => $contact->addresses->toArray(),
+                    'email_addresses' => array_map($this->labeledValueToArray(...), $data->emailAddresses),
+                    'phone_numbers' => array_map($this->labeledValueToArray(...), $data->phoneNumbers),
+                    'addresses' => array_map($this->addressToArray(...), $data->addresses),
                     'primary_email' => $emails->first(),
                     'primary_phone' => $phones->first(),
                     'updated_at' => $contact->last_modified_at->toISOString(),
                 ];
-            });
+            })
+            ->sortBy(fn (array $contact): string => mb_strtolower((string) ($contact['full_name'] ?: $contact['family_name'] ?: $contact['display_name'])))
+            ->values();
 
         return Inertia::render('contacts/index', [
             'addressBooks' => $addressBooks,
@@ -125,42 +111,55 @@ class ContactController extends Controller
     }
 
     /**
+     * Map a validated request into the camelCase shape ContactData expects.
+     *
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
     private function contactFields(array $input): array
     {
+        $keyMap = [
+            'full_name' => 'formattedName',
+            'given_name' => 'givenName',
+            'family_name' => 'familyName',
+            'job_title' => 'jobTitle',
+        ];
+
         $email = $input['email'] ?? null;
         $phone = $input['phone'] ?? null;
         unset($input['email'], $input['phone']);
 
-        if (array_key_exists('email_addresses', $input)) {
-            $input['email_addresses'] = $this->emailAddresses($input['email_addresses']);
-            $input['emails'] = collect($input['email_addresses'])->pluck('value')->all();
+        $fields = [];
+
+        foreach ($input as $key => $value) {
+            $fields[$keyMap[$key] ?? $key] = $value;
+        }
+
+        if (array_key_exists('email_addresses', $fields)) {
+            $fields['emailAddresses'] = $this->labeledValues($fields['email_addresses']);
         } elseif (filled($email)) {
-            $input['emails'] = [$email];
-            $input['email_addresses'] = [['label' => 'work', 'value' => $email, 'types' => ['INTERNET', 'WORK']]];
+            $fields['emailAddresses'] = [['label' => 'work', 'value' => $email, 'types' => ['INTERNET', 'WORK']]];
         }
 
-        if (array_key_exists('phone_numbers', $input)) {
-            $input['phone_numbers'] = $this->phoneNumbers($input['phone_numbers']);
-            $input['phones'] = collect($input['phone_numbers'])->pluck('value')->all();
+        if (array_key_exists('phone_numbers', $fields)) {
+            $fields['phoneNumbers'] = $this->labeledValues($fields['phone_numbers']);
         } elseif (filled($phone)) {
-            $input['phones'] = [$phone];
-            $input['phone_numbers'] = [['label' => 'mobile', 'value' => $phone, 'types' => ['CELL'], 'is_preferred' => true]];
+            $fields['phoneNumbers'] = [['label' => 'mobile', 'value' => $phone, 'types' => ['CELL'], 'isPreferred' => true]];
         }
 
-        if (array_key_exists('addresses', $input)) {
-            $input['addresses'] = $this->addresses($input['addresses']);
+        if (array_key_exists('addresses', $fields)) {
+            $fields['addresses'] = $this->addresses($fields['addresses']);
         }
 
-        return $input;
+        unset($fields['email_addresses'], $fields['phone_numbers']);
+
+        return $fields;
     }
 
     /**
-     * @return array<int, array{label: ?string, value: string, types: array<int, string>, is_preferred: bool, group: ?string}>
+     * @return array<int, array{label: ?string, value: string, types: array<int, string>, isPreferred: bool, group: ?string}>
      */
-    private function emailAddresses(mixed $rows): array
+    private function labeledValues(mixed $rows): array
     {
         return collect(is_array($rows) ? $rows : [])
             ->filter(fn (mixed $row): bool => is_array($row) && filled($row['value'] ?? null))
@@ -168,25 +167,7 @@ class ContactController extends Controller
                 'label' => $this->nullableString($row['label'] ?? null),
                 'value' => (string) $row['value'],
                 'types' => $this->stringList($row['types'] ?? []),
-                'is_preferred' => (bool) ($row['is_preferred'] ?? false),
-                'group' => $this->nullableString($row['group'] ?? null),
-            ])
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @return array<int, array{label: ?string, value: string, types: array<int, string>, is_preferred: bool, group: ?string}>
-     */
-    private function phoneNumbers(mixed $rows): array
-    {
-        return collect(is_array($rows) ? $rows : [])
-            ->filter(fn (mixed $row): bool => is_array($row) && filled($row['value'] ?? null))
-            ->map(fn (array $row): array => [
-                'label' => $this->nullableString($row['label'] ?? null),
-                'value' => (string) $row['value'],
-                'types' => $this->stringList($row['types'] ?? []),
-                'is_preferred' => (bool) ($row['is_preferred'] ?? false),
+                'isPreferred' => (bool) ($row['is_preferred'] ?? false),
                 'group' => $this->nullableString($row['group'] ?? null),
             ])
             ->values()
@@ -211,20 +192,55 @@ class ContactController extends Controller
             ])->contains(fn (mixed $value): bool => filled($value)))
             ->map(fn (array $row): array => [
                 'label' => $this->nullableString($row['label'] ?? null),
-                'po_box' => $this->nullableString($row['po_box'] ?? null),
+                'poBox' => $this->nullableString($row['po_box'] ?? null),
                 'extended' => $this->nullableString($row['extended'] ?? null),
                 'street' => $this->nullableString($row['street'] ?? null),
                 'city' => $this->nullableString($row['city'] ?? null),
                 'region' => $this->nullableString($row['region'] ?? null),
-                'postal_code' => $this->nullableString($row['postal_code'] ?? null),
+                'postalCode' => $this->nullableString($row['postal_code'] ?? null),
                 'country' => $this->nullableString($row['country'] ?? null),
-                'country_code' => $this->nullableString($row['country_code'] ?? null),
+                'countryCode' => $this->nullableString($row['country_code'] ?? null),
                 'types' => $this->stringList($row['types'] ?? []),
-                'is_preferred' => (bool) ($row['is_preferred'] ?? false),
+                'isPreferred' => (bool) ($row['is_preferred'] ?? false),
                 'group' => $this->nullableString($row['group'] ?? null),
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array{label: ?string, value: string, types: array<int, string>, is_preferred: bool, group: ?string}
+     */
+    private function labeledValueToArray(LabeledContactValue $value): array
+    {
+        return [
+            'label' => $value->label,
+            'value' => $value->value,
+            'types' => $value->types,
+            'is_preferred' => $value->isPreferred,
+            'group' => $value->group,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function addressToArray(ContactPostalAddress $address): array
+    {
+        return [
+            'label' => $address->label,
+            'po_box' => $address->poBox,
+            'extended' => $address->extended,
+            'street' => $address->street,
+            'city' => $address->city,
+            'region' => $address->region,
+            'postal_code' => $address->postalCode,
+            'country' => $address->country,
+            'country_code' => $address->countryCode,
+            'types' => $address->types,
+            'is_preferred' => $address->isPreferred,
+            'group' => $address->group,
+        ];
     }
 
     private function nullableString(mixed $value): ?string

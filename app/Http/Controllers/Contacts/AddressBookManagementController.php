@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Contacts\StoreAddressBookRequest;
 use App\Http\Requests\Contacts\UpdateAddressBookRequest;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
-use Bambamboole\LaravelDav\Parsing\CollectionUri;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class AddressBookManagementController extends Controller
@@ -18,7 +18,7 @@ class AddressBookManagementController extends Controller
 
         DavAddressBook::query()->create([
             'user_id' => $request->user()->id,
-            'uri' => CollectionUri::fromDisplayName($data['display_name']),
+            'uri' => Str::slug($data['display_name']) ?: (string) Str::uuid(),
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,
             'sync_token' => 1,

@@ -60,7 +60,8 @@ class ContactExportController extends Controller
 
     private function filenameFor(DavCard $contact): string
     {
-        $name = filled($contact->full_name) ? $contact->full_name : ($contact->uid ?? 'contact');
+        $data = $contact->data;
+        $name = filled($data->formattedName) ? $data->formattedName : ($data->uid ?? 'contact');
 
         return Str::slug($name).'.vcf';
     }

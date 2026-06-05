@@ -35,19 +35,7 @@ class CalendarController
             ->where('starts_at', '<=', $end)
             ->where('ends_at', '>=', $start)
             ->orderBy('starts_at')
-            ->get([
-                'id',
-                'dav_calendar_id',
-                'summary',
-                'description',
-                'location',
-                'starts_at',
-                'ends_at',
-                'is_all_day',
-                'status',
-                'url',
-                'etag',
-            ])
+            ->get()
             ->map(fn (DavCalendarObject $event): array => [
                 'id' => $event->id,
                 'calendar_id' => $event->dav_calendar_id,
@@ -56,16 +44,16 @@ class CalendarController
                     'name' => $event->calendar->display_name,
                     'color' => $event->calendar->color,
                 ],
-                'summary' => $event->summary,
-                'description' => $event->description,
-                'location' => $event->location,
+                'summary' => $event->data->summary,
+                'description' => $event->data->description,
+                'location' => $event->data->location,
                 'starts_at' => $event->starts_at->toISOString(),
                 'ends_at' => $event->ends_at->toISOString(),
                 'starts_on' => $event->starts_at->toDateString(),
                 'ends_on' => $event->ends_at->toDateString(),
                 'all_day' => $event->is_all_day,
-                'status' => $event->status,
-                'url' => $event->url,
+                'status' => $event->data->status,
+                'url' => $event->data->url,
                 'etag' => $event->etag,
             ]);
 
