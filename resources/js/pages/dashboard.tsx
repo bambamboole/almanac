@@ -119,7 +119,7 @@ export default function Dashboard({ todayEvents, stats }: DashboardProps) {
                                     className="grid grid-cols-[64px_1fr] items-center gap-4 py-3"
                                 >
                                     <span className="text-sm font-semibold tabular-nums text-primary">
-                                        {event.all_day
+                                        {event.is_all_day
                                             ? 'All day'
                                             : timeFormatter.format(
                                                   new Date(event.starts_at),
@@ -136,11 +136,12 @@ export default function Dashboard({ todayEvents, stats }: DashboardProps) {
                                             aria-hidden
                                         />
                                         <span className="text-sm font-medium">
-                                            {event.summary ?? 'Untitled event'}
+                                            {event.data.summary ??
+                                                'Untitled event'}
                                         </span>
-                                        {event.location && (
+                                        {event.data.location && (
                                             <span className="text-xs text-muted-foreground">
-                                                · {event.location}
+                                                · {event.data.location}
                                             </span>
                                         )}
                                     </span>

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Bambamboole\LaravelDav\Models\DavCalendarObject;
+use App\Models\CalendarEvent;
 use Bambamboole\LaravelDav\Models\DavCard;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $startOfToday = now()->startOfDay();
         $startOfTomorrow = now()->addDay()->startOfDay();
 
-        $userEvents = fn () => DavCalendarObject::query()
+        $userEvents = fn () => CalendarEvent::query()
             ->whereHas('calendar', fn ($query) => $query->whereBelongsTo($user))
             ->where('component_type', 'VEVENT');
 
@@ -26,19 +26,7 @@ class DashboardController extends Controller
             ->where('starts_at', '<', $startOfTomorrow)
             ->orderBy('starts_at')
             ->limit(8)
-            ->get()
-            ->map(fn (DavCalendarObject $event): array => [
-                'id' => $event->id,
-                'summary' => $event->data->summary,
-                'location' => $event->data->location,
-                'starts_at' => $event->starts_at->toISOString(),
-                'ends_at' => $event->ends_at?->toISOString(),
-                'all_day' => $event->is_all_day,
-                'calendar' => [
-                    'name' => $event->calendar->display_name,
-                    'color' => $event->calendar->color,
-                ],
-            ]);
+            ->get();
 
         return Inertia::render('dashboard', [
             'todayEvents' => $todayEvents,

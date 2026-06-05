@@ -1,6 +1,6 @@
 export type Calendar = {
     id: number;
-    name: string;
+    display_name: string;
     description: string | null;
     color: string | null;
     timezone: string | null;
@@ -9,25 +9,35 @@ export type Calendar = {
 
 export type CalendarEventCalendar = {
     id: number;
-    name: string;
+    display_name: string;
     color: string | null;
+};
+
+/** Mirrors Bambamboole\LaravelDav\Dto\CalendarObjectData (the `raw` field is stripped server-side). */
+export type CalendarObjectData = {
+    uid: string | null;
+    componentType: string | null;
+    summary: string | null;
+    description: string | null;
+    location: string | null;
+    status: string | null;
+    url: string | null;
+    startsAt: string | null;
+    endsAt: string | null;
+    isAllDay: boolean;
+    isRecurring: boolean;
+    timezone: string | null;
 };
 
 export type CalendarEvent = {
     id: number;
-    calendar_id: number;
-    calendar: CalendarEventCalendar;
-    summary: string | null;
-    description: string | null;
-    location: string | null;
+    dav_calendar_id: number;
+    etag: string;
     starts_at: string;
     ends_at: string;
-    starts_on: string;
-    ends_on: string;
-    all_day: boolean;
-    status: string | null;
-    url: string | null;
-    etag: string;
+    is_all_day: boolean;
+    calendar: CalendarEventCalendar;
+    data: CalendarObjectData;
 };
 
 export type CalendarWindow = {

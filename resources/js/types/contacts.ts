@@ -1,63 +1,73 @@
 export type ContactAddressBook = {
     id: number;
-    name: string;
-    description: string | null;
-    contacts_count: number;
-};
-
-export type Contact = {
-    id: number;
-    address_book_id: number;
-    address_book: {
-        id: number;
-        name: string;
-    };
     display_name: string;
-    full_name: string | null;
-    given_name: string | null;
-    family_name: string | null;
-    organization: string | null;
-    job_title: string | null;
-    nickname: string | null;
-    note: string | null;
-    etag: string;
-    emails: string[];
-    phones: string[];
-    email_addresses: ContactEmailAddress[];
-    phone_numbers: ContactPhoneNumber[];
-    addresses: ContactPostalAddress[];
-    primary_email: string | null;
-    primary_phone: string | null;
-    updated_at: string | null;
+    description: string | null;
+    cards_count: number;
 };
 
-export type ContactEmailAddress = {
+export type ContactLabeledValue = {
     label: string | null;
     value: string;
     types: string[];
-    is_preferred: boolean;
-    group: string | null;
-};
-
-export type ContactPhoneNumber = {
-    label: string | null;
-    value: string;
-    types: string[];
-    is_preferred: boolean;
+    isPreferred: boolean;
     group: string | null;
 };
 
 export type ContactPostalAddress = {
     label: string | null;
-    po_box: string | null;
+    poBox: string | null;
     extended: string | null;
     street: string | null;
     city: string | null;
     region: string | null;
-    postal_code: string | null;
+    postalCode: string | null;
     country: string | null;
-    country_code: string | null;
+    countryCode: string | null;
     types: string[];
-    is_preferred: boolean;
+    isPreferred: boolean;
     group: string | null;
+};
+
+export type ContactDate = {
+    label: string | null;
+    year: number | null;
+    month: number | null;
+    day: number | null;
+    calendar: string | null;
+    rawValue: string | null;
+    group: string | null;
+};
+
+/** Mirrors Bambamboole\LaravelDav\Dto\ContactData (the `raw` field is stripped server-side). */
+export type ContactData = {
+    uid: string | null;
+    formattedName: string | null;
+    givenName: string | null;
+    familyName: string | null;
+    organization: string | null;
+    contactType: string;
+    birthday: ContactDate | null;
+    emailAddresses: ContactLabeledValue[];
+    phoneNumbers: ContactLabeledValue[];
+    addresses: ContactPostalAddress[];
+    namePrefix: string | null;
+    middleName: string | null;
+    nameSuffix: string | null;
+    nickname: string | null;
+    jobTitle: string | null;
+    department: string | null;
+    note: string | null;
+};
+
+export type Contact = {
+    id: number;
+    dav_address_book_id: number;
+    uri: string;
+    etag: string;
+    last_modified_at: string;
+    data: ContactData;
+    address_book: {
+        id: number;
+        display_name: string;
+    };
 };

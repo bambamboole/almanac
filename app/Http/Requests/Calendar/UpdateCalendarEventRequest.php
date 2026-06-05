@@ -17,14 +17,15 @@ class UpdateCalendarEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'summary' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'starts_at' => ['sometimes', 'date'],
-            'ends_at' => ['sometimes', 'date', 'after_or_equal:starts_at'],
-            'is_all_day' => ['sometimes', 'boolean'],
-            'status' => ['nullable', 'string', 'max:64'],
-            'url' => ['nullable', 'string', 'url', 'max:2048'],
+            'data' => ['required', 'array'],
+            'data.summary' => ['nullable', 'string', 'max:255'],
+            'data.description' => ['nullable', 'string'],
+            'data.location' => ['nullable', 'string', 'max:255'],
+            'data.startsAt' => ['sometimes', 'date'],
+            'data.endsAt' => ['sometimes', 'date', 'after_or_equal:data.startsAt'],
+            'data.isAllDay' => ['sometimes', 'boolean'],
+            'data.status' => ['nullable', 'string', 'max:64'],
+            'data.url' => ['nullable', 'string', 'url', 'max:2048'],
             'expected_etag' => ['required', 'string'],
         ];
     }

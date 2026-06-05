@@ -1,12 +1,6 @@
-export type DashboardEvent = {
-    id: number;
-    summary: string | null;
-    location: string | null;
-    starts_at: string;
-    ends_at: string | null;
-    all_day: boolean;
-    calendar: { name: string; color: string | null };
-};
+import type { CalendarEvent } from './calendar';
+
+export type DashboardEvent = CalendarEvent;
 
 export type DashboardStats = {
     todayEventCount: number;

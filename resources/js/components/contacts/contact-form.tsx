@@ -10,14 +10,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import type { App } from '@/wayfinder/types';
-import type { Contact } from '@/types/contacts';
+import type {
+    Contact,
+    ContactLabeledValue,
+    ContactPostalAddress,
+} from '@/types/contacts';
 
 export type ContactEmailAddressForm = {
     label: string;
     value: string;
     types: string[];
-    is_preferred: boolean;
+    isPreferred: boolean;
     group: string;
 };
 
@@ -25,40 +28,36 @@ export type ContactPhoneNumberForm = {
     label: string;
     value: string;
     types: string[];
-    is_preferred: boolean;
+    isPreferred: boolean;
     group: string;
 };
 
 export type ContactPostalAddressForm = {
     label: string;
-    po_box: string;
+    poBox: string;
     extended: string;
     street: string;
     city: string;
     region: string;
-    postal_code: string;
+    postalCode: string;
     country: string;
-    country_code: string;
+    countryCode: string;
     types: string[];
-    is_preferred: boolean;
+    isPreferred: boolean;
     group: string;
 };
 
-export type ContactFormFields = {
-    full_name: string;
-    given_name: string;
-    family_name: string;
+export type ContactDataForm = {
+    formattedName: string;
+    givenName: string;
+    familyName: string;
     organization: string;
-    job_title: string;
+    jobTitle: string;
     nickname: string;
     note: string;
-    email_addresses: ContactEmailAddressForm[];
-    phone_numbers: ContactPhoneNumberForm[];
+    emailAddresses: ContactEmailAddressForm[];
+    phoneNumbers: ContactPhoneNumberForm[];
     addresses: ContactPostalAddressForm[];
-};
-
-export type CreateContactFormData = ContactFormFields & {
-    address_book_id: App.Http.Controllers.Contacts.ContactController.Store.Request['address_book_id'];
 };
 
 export function emailTypesFor(label: string): string[] {
@@ -110,7 +109,7 @@ export function blankEmailAddress(label = 'work'): ContactEmailAddressForm {
         label,
         value: '',
         types: emailTypesFor(label),
-        is_preferred: false,
+        isPreferred: false,
         group: '',
     };
 }
@@ -120,7 +119,7 @@ export function blankPhoneNumber(label = 'mobile'): ContactPhoneNumberForm {
         label,
         value: '',
         types: phoneTypesFor(label),
-        is_preferred: false,
+        isPreferred: false,
         group: '',
     };
 }
@@ -128,22 +127,22 @@ export function blankPhoneNumber(label = 'mobile'): ContactPhoneNumberForm {
 export function blankPostalAddress(label = 'home'): ContactPostalAddressForm {
     return {
         label,
-        po_box: '',
+        poBox: '',
         extended: '',
         street: '',
         city: '',
         region: '',
-        postal_code: '',
+        postalCode: '',
         country: '',
-        country_code: '',
+        countryCode: '',
         types: addressTypesFor(label),
-        is_preferred: false,
+        isPreferred: false,
         group: '',
     };
 }
 
 export function emailAddressFromContact(
-    email: Contact['email_addresses'][number],
+    email: ContactLabeledValue,
 ): ContactEmailAddressForm {
     return {
         label: email.label ?? 'work',
@@ -152,13 +151,13 @@ export function emailAddressFromContact(
             email.types.length > 0
                 ? email.types
                 : emailTypesFor(email.label ?? 'work'),
-        is_preferred: email.is_preferred,
+        isPreferred: email.isPreferred,
         group: email.group ?? '',
     };
 }
 
 export function phoneNumberFromContact(
-    phone: Contact['phone_numbers'][number],
+    phone: ContactLabeledValue,
 ): ContactPhoneNumberForm {
     return {
         label: phone.label ?? 'mobile',
@@ -167,31 +166,97 @@ export function phoneNumberFromContact(
             phone.types.length > 0
                 ? phone.types
                 : phoneTypesFor(phone.label ?? 'mobile'),
-        is_preferred: phone.is_preferred,
+        isPreferred: phone.isPreferred,
         group: phone.group ?? '',
     };
 }
 
 export function postalAddressFromContact(
-    address: Contact['addresses'][number],
+    address: ContactPostalAddress,
 ): ContactPostalAddressForm {
     return {
         label: address.label ?? 'home',
-        po_box: address.po_box ?? '',
+        poBox: address.poBox ?? '',
         extended: address.extended ?? '',
         street: address.street ?? '',
         city: address.city ?? '',
         region: address.region ?? '',
-        postal_code: address.postal_code ?? '',
+        postalCode: address.postalCode ?? '',
         country: address.country ?? '',
-        country_code: address.country_code ?? '',
+        countryCode: address.countryCode ?? '',
         types:
             address.types.length > 0
                 ? address.types
                 : addressTypesFor(address.label ?? 'home'),
-        is_preferred: address.is_preferred,
+        isPreferred: address.isPreferred,
         group: address.group ?? '',
     };
+}
+
+export function contactDataFromContact(contact: Contact): ContactDataForm {
+    const data = contact.data;
+
+    return {
+        formattedName: data.formattedName ?? '',
+        givenName: data.givenName ?? '',
+        familyName: data.familyName ?? '',
+        organization: data.organization ?? '',
+        jobTitle: data.jobTitle ?? '',
+        nickname: data.nickname ?? '',
+        note: data.note ?? '',
+        emailAddresses:
+            data.emailAddresses.length > 0
+                ? data.emailAddresses.map(emailAddressFromContact)
+                : [blankEmailAddress()],
+        phoneNumbers:
+            data.phoneNumbers.length > 0
+                ? data.phoneNumbers.map(phoneNumberFromContact)
+                : [blankPhoneNumber()],
+        addresses:
+            data.addresses.length > 0
+                ? data.addresses.map(postalAddressFromContact)
+                : [blankPostalAddress()],
+    };
+}
+
+export function blankContactData(): ContactDataForm {
+    return {
+        formattedName: '',
+        givenName: '',
+        familyName: '',
+        organization: '',
+        jobTitle: '',
+        nickname: '',
+        note: '',
+        emailAddresses: [blankEmailAddress()],
+        phoneNumbers: [blankPhoneNumber()],
+        addresses: [blankPostalAddress()],
+    };
+}
+
+export function contactPrimaryEmail(contact: Contact): string | null {
+    const emails = contact.data.emailAddresses;
+
+    return (
+        (emails.find((email) => email.isPreferred) ?? emails[0])?.value ?? null
+    );
+}
+
+export function contactPrimaryPhone(contact: Contact): string | null {
+    const phones = contact.data.phoneNumbers;
+
+    return (
+        (phones.find((phone) => phone.isPreferred) ?? phones[0])?.value ?? null
+    );
+}
+
+export function contactDisplayName(contact: Contact): string {
+    return (
+        contact.data.formattedName ||
+        contactPrimaryEmail(contact) ||
+        contactPrimaryPhone(contact) ||
+        'Unnamed contact'
+    );
 }
 
 export function contactError(
@@ -205,36 +270,36 @@ export function ContactStructuredFields({
     data,
     errors,
     idPrefix,
-    setContactField,
+    setDataField,
 }: {
-    data: ContactFormFields;
+    data: ContactDataForm;
     errors: Partial<Record<string, string>>;
     idPrefix: 'create-contact' | 'edit-contact';
-    setContactField: (
-        key: keyof ContactFormFields,
-        value: ContactFormFields[keyof ContactFormFields],
+    setDataField: <K extends keyof ContactDataForm>(
+        key: K,
+        value: ContactDataForm[K],
     ) => void;
 }) {
     function updateEmailAddress(
         index: number,
         fields: Partial<ContactEmailAddressForm>,
     ) {
-        const emailAddresses = data.email_addresses.map((email, emailIndex) =>
+        const emailAddresses = data.emailAddresses.map((email, emailIndex) =>
             emailIndex === index ? { ...email, ...fields } : email,
         );
 
-        setContactField('email_addresses', emailAddresses);
+        setDataField('emailAddresses', emailAddresses);
     }
 
     function updatePhoneNumber(
         index: number,
         fields: Partial<ContactPhoneNumberForm>,
     ) {
-        const phoneNumbers = data.phone_numbers.map((phone, phoneIndex) =>
+        const phoneNumbers = data.phoneNumbers.map((phone, phoneIndex) =>
             phoneIndex === index ? { ...phone, ...fields } : phone,
         );
 
-        setContactField('phone_numbers', phoneNumbers);
+        setDataField('phoneNumbers', phoneNumbers);
     }
 
     function updateAddress(
@@ -245,7 +310,7 @@ export function ContactStructuredFields({
             addressIndex === index ? { ...address, ...fields } : address,
         );
 
-        setContactField('addresses', addresses);
+        setDataField('addresses', addresses);
     }
 
     return (
@@ -261,8 +326,8 @@ export function ContactStructuredFields({
                         size="sm"
                         className="h-7 px-2 text-xs"
                         onClick={() =>
-                            setContactField('email_addresses', [
-                                ...data.email_addresses,
+                            setDataField('emailAddresses', [
+                                ...data.emailAddresses,
                                 blankEmailAddress(),
                             ])
                         }
@@ -272,7 +337,7 @@ export function ContactStructuredFields({
                     </Button>
                 </div>
 
-                {data.email_addresses.map((email, index) => {
+                {data.emailAddresses.map((email, index) => {
                     const valueId =
                         index === 0
                             ? idPrefix === 'create-contact'
@@ -336,7 +401,7 @@ export function ContactStructuredFields({
                                     <InputError
                                         message={contactError(
                                             errors,
-                                            `email_addresses.${index}.value`,
+                                            `data.emailAddresses.${index}.value`,
                                         )}
                                     />
                                 </div>
@@ -348,12 +413,12 @@ export function ContactStructuredFields({
                                         size="icon"
                                         aria-label="Remove email"
                                         disabled={
-                                            data.email_addresses.length === 1
+                                            data.emailAddresses.length === 1
                                         }
                                         onClick={() =>
-                                            setContactField(
-                                                'email_addresses',
-                                                data.email_addresses.filter(
+                                            setDataField(
+                                                'emailAddresses',
+                                                data.emailAddresses.filter(
                                                     (_, emailIndex) =>
                                                         emailIndex !== index,
                                                 ),
@@ -380,8 +445,8 @@ export function ContactStructuredFields({
                         size="sm"
                         className="h-7 px-2 text-xs"
                         onClick={() =>
-                            setContactField('phone_numbers', [
-                                ...data.phone_numbers,
+                            setDataField('phoneNumbers', [
+                                ...data.phoneNumbers,
                                 blankPhoneNumber(),
                             ])
                         }
@@ -391,7 +456,7 @@ export function ContactStructuredFields({
                     </Button>
                 </div>
 
-                {data.phone_numbers.map((phone, index) => {
+                {data.phoneNumbers.map((phone, index) => {
                     const valueId =
                         index === 0
                             ? idPrefix === 'create-contact'
@@ -463,7 +528,7 @@ export function ContactStructuredFields({
                                     <InputError
                                         message={contactError(
                                             errors,
-                                            `phone_numbers.${index}.value`,
+                                            `data.phoneNumbers.${index}.value`,
                                         )}
                                     />
                                 </div>
@@ -475,12 +540,12 @@ export function ContactStructuredFields({
                                         size="icon"
                                         aria-label="Remove phone"
                                         disabled={
-                                            data.phone_numbers.length === 1
+                                            data.phoneNumbers.length === 1
                                         }
                                         onClick={() =>
-                                            setContactField(
-                                                'phone_numbers',
-                                                data.phone_numbers.filter(
+                                            setDataField(
+                                                'phoneNumbers',
+                                                data.phoneNumbers.filter(
                                                     (_, phoneIndex) =>
                                                         phoneIndex !== index,
                                                 ),
@@ -507,7 +572,7 @@ export function ContactStructuredFields({
                         size="sm"
                         className="h-7 px-2 text-xs"
                         onClick={() =>
-                            setContactField('addresses', [
+                            setDataField('addresses', [
                                 ...data.addresses,
                                 blankPostalAddress(),
                             ])
@@ -575,7 +640,7 @@ export function ContactStructuredFields({
                                     <InputError
                                         message={contactError(
                                             errors,
-                                            `addresses.${index}.street`,
+                                            `data.addresses.${index}.street`,
                                         )}
                                     />
                                 </div>
@@ -588,7 +653,7 @@ export function ContactStructuredFields({
                                         aria-label="Remove address"
                                         disabled={data.addresses.length === 1}
                                         onClick={() =>
-                                            setContactField(
+                                            setDataField(
                                                 'addresses',
                                                 data.addresses.filter(
                                                     (_, addressIndex) =>
@@ -647,10 +712,10 @@ export function ContactStructuredFields({
                                     </Label>
                                     <Input
                                         id={`${idPrefix}-address-${index}-postal-code`}
-                                        value={address.postal_code}
+                                        value={address.postalCode}
                                         onChange={(e) =>
                                             updateAddress(index, {
-                                                postal_code: e.target.value,
+                                                postalCode: e.target.value,
                                             })
                                         }
                                         placeholder="ZIP"
