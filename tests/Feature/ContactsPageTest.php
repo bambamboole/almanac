@@ -39,24 +39,21 @@ test('authenticated user gets the contacts page payload', function () {
             ->component('contacts/index')
             ->has('addressBooks', 1, fn (Assert $page) => $page
                 ->where('id', $addressBook->id)
-                ->where('name', 'People')
+                ->where('display_name', 'People')
                 ->where('description', 'Personal contacts')
-                ->where('contacts_count', 1)
+                ->where('cards_count', 1)
                 ->etc(),
             )
             ->has('contacts', 1, fn (Assert $page) => $page
-                ->where('full_name', 'Ada Lovelace')
-                ->where('display_name', 'Ada Lovelace')
-                ->where('given_name', 'Ada')
-                ->where('family_name', 'Lovelace')
-                ->where('organization', 'Analytical Engines')
-                ->where('emails.0', 'ada@example.com')
-                ->where('emails.1', 'work@example.com')
-                ->where('phones.0', '+1 555 0100')
-                ->where('primary_email', 'ada@example.com')
-                ->where('primary_phone', '+1 555 0100')
+                ->where('data.formattedName', 'Ada Lovelace')
+                ->where('data.givenName', 'Ada')
+                ->where('data.familyName', 'Lovelace')
+                ->where('data.organization', 'Analytical Engines')
+                ->where('data.emailAddresses.0.value', 'ada@example.com')
+                ->where('data.emailAddresses.1.value', 'work@example.com')
+                ->where('data.phoneNumbers.0.value', '+1 555 0100')
                 ->where('address_book.id', $addressBook->id)
-                ->where('address_book.name', 'People')
+                ->where('address_book.display_name', 'People')
                 ->missing('card_data')
                 ->etc(),
             ),
@@ -80,7 +77,7 @@ test('contacts page excludes another users contacts', function () {
 
     expect($contacts)->toHaveCount(1)
         ->and($contacts[0]['id'])->toBe($ownedContact->id)
-        ->and($contacts[0]['full_name'])->toBe('Owned Contact');
+        ->and($contacts[0]['data']['formattedName'])->toBe('Owned Contact');
 });
 
 test('contact props do not expose raw card data', function () {

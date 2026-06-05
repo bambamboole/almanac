@@ -11,12 +11,18 @@ it('creates a contact for an address book the user owns', function () {
     $this->actingAs($user)
         ->post('/contacts', [
             'address_book_id' => $book->id,
-            'full_name' => 'Grace Hopper',
-            'given_name' => 'Grace',
-            'family_name' => 'Hopper',
-            'organization' => 'Compiler Labs',
-            'email' => 'grace@example.com',
-            'phone' => '+1 555 0101',
+            'data' => [
+                'formattedName' => 'Grace Hopper',
+                'givenName' => 'Grace',
+                'familyName' => 'Hopper',
+                'organization' => 'Compiler Labs',
+                'emailAddresses' => [
+                    ['label' => 'work', 'value' => 'grace@example.com', 'types' => ['INTERNET', 'WORK'], 'isPreferred' => true],
+                ],
+                'phoneNumbers' => [
+                    ['label' => 'mobile', 'value' => '+1 555 0101', 'types' => ['CELL'], 'isPreferred' => true],
+                ],
+            ],
         ])
         ->assertRedirect()
         ->assertInertiaFlash('toast.type', 'success')
@@ -34,7 +40,7 @@ it('forbids creating a contact in another user\'s address book', function () {
     $book = DavAddressBook::factory()->for(User::factory())->create();
 
     $this->actingAs($user)
-        ->post('/contacts', ['address_book_id' => $book->id, 'full_name' => 'X'])
+        ->post('/contacts', ['address_book_id' => $book->id, 'data' => ['formattedName' => 'X']])
         ->assertSessionHasErrors('address_book_id');
 });
 
@@ -45,24 +51,26 @@ it('creates a contact with structured phones and addresses', function () {
     $this->actingAs($user)
         ->post('/contacts', [
             'address_book_id' => $book->id,
-            'full_name' => 'Ada Lovelace',
-            'email_addresses' => [
-                ['label' => 'work', 'value' => 'ada@work.example.com', 'types' => ['INTERNET', 'WORK']],
-                ['label' => 'home', 'value' => 'ada@home.example.com', 'types' => ['INTERNET', 'HOME']],
-            ],
-            'phone_numbers' => [
-                ['label' => 'mobile', 'value' => '+1 555 0100', 'types' => ['CELL']],
-                ['label' => 'work', 'value' => '+1 555 0101', 'types' => ['WORK']],
-            ],
-            'addresses' => [
-                [
-                    'label' => 'home',
-                    'street' => '1 Engine Street',
-                    'city' => 'London',
-                    'region' => 'London',
-                    'postal_code' => 'EC1',
-                    'country' => 'United Kingdom',
-                    'types' => ['HOME'],
+            'data' => [
+                'formattedName' => 'Ada Lovelace',
+                'emailAddresses' => [
+                    ['label' => 'work', 'value' => 'ada@work.example.com', 'types' => ['INTERNET', 'WORK']],
+                    ['label' => 'home', 'value' => 'ada@home.example.com', 'types' => ['INTERNET', 'HOME']],
+                ],
+                'phoneNumbers' => [
+                    ['label' => 'mobile', 'value' => '+1 555 0100', 'types' => ['CELL']],
+                    ['label' => 'work', 'value' => '+1 555 0101', 'types' => ['WORK']],
+                ],
+                'addresses' => [
+                    [
+                        'label' => 'home',
+                        'street' => '1 Engine Street',
+                        'city' => 'London',
+                        'region' => 'London',
+                        'postalCode' => 'EC1',
+                        'country' => 'United Kingdom',
+                        'types' => ['HOME'],
+                    ],
                 ],
             ],
         ])

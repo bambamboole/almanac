@@ -11,10 +11,12 @@ it('creates an event for a calendar the user owns', function () {
     $this->actingAs($user)
         ->post('/calendar/events', [
             'calendar_id' => $calendar->id,
-            'summary' => 'Lunch',
-            'starts_at' => '2026-06-11T12:30:00Z',
-            'ends_at' => '2026-06-11T13:30:00Z',
-            'is_all_day' => false,
+            'data' => [
+                'summary' => 'Lunch',
+                'startsAt' => '2026-06-11T12:30:00Z',
+                'endsAt' => '2026-06-11T13:30:00Z',
+                'isAllDay' => false,
+            ],
         ])
         ->assertRedirect()
         ->assertInertiaFlash('toast.type', 'success')
@@ -31,9 +33,11 @@ it('forbids creating an event on another user\'s calendar', function () {
     $this->actingAs($user)
         ->post('/calendar/events', [
             'calendar_id' => $calendar->id,
-            'summary' => 'Sneaky',
-            'starts_at' => '2026-06-11T12:30:00Z',
-            'ends_at' => '2026-06-11T13:30:00Z',
+            'data' => [
+                'summary' => 'Sneaky',
+                'startsAt' => '2026-06-11T12:30:00Z',
+                'endsAt' => '2026-06-11T13:30:00Z',
+            ],
         ])
         ->assertSessionHasErrors('calendar_id');
 });

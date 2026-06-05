@@ -69,6 +69,6 @@ it('shows today/week/contact counts and today agenda scoped to the user', functi
             ->where('stats.weekEventCount', 1)
             ->where('stats.contactCount', 3)
             ->has('todayEvents', 1)
-            ->where('todayEvents.0.summary', 'Morning planning')
+            ->where('todayEvents.0.data.summary', 'Morning planning')
         );
 });

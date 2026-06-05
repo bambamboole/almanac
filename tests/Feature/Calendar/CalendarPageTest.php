@@ -40,22 +40,20 @@ test('authenticated user gets the calendar page payload', function () {
             ->has('window.end')
             ->has('calendars', 1, fn (Assert $page) => $page
                 ->where('id', $calendar->id)
-                ->where('name', 'Personal')
+                ->where('display_name', 'Personal')
                 ->where('color', '#2563eb')
                 ->etc(),
             )
             ->has('events', 1, fn (Assert $page) => $page
-                ->where('summary', 'Planning review')
-                ->where('location', 'Office')
-                ->where('description', 'Quarterly planning session')
+                ->where('data.summary', 'Planning review')
+                ->where('data.location', 'Office')
+                ->where('data.description', 'Quarterly planning session')
                 ->where('calendar.id', $calendar->id)
-                ->where('calendar.name', 'Personal')
+                ->where('calendar.display_name', 'Personal')
                 ->where('calendar.color', '#2563eb')
-                ->where('all_day', false)
+                ->where('is_all_day', false)
                 ->has('starts_at')
                 ->has('ends_at')
-                ->has('starts_on')
-                ->has('ends_on')
                 ->missing('calendar_data')
                 ->etc(),
             ),
@@ -75,10 +73,10 @@ test('calendar page exposes date-only fields for all-day events', function () {
     $this->actingAs($user)
         ->get('/calendar')
         ->assertInertia(fn (Assert $page) => $page
-            ->where('events.0.summary', 'Conference')
-            ->where('events.0.all_day', true)
-            ->where('events.0.starts_on', '2026-06-03')
-            ->where('events.0.ends_on', '2026-06-04'),
+            ->where('events.0.data.summary', 'Conference')
+            ->where('events.0.is_all_day', true)
+            ->where('events.0.starts_at', fn (string $startsAt) => str_starts_with($startsAt, '2026-06-03'))
+            ->where('events.0.ends_at', fn (string $endsAt) => str_starts_with($endsAt, '2026-06-04')),
         );
 });
 
@@ -103,7 +101,7 @@ test('calendar page excludes another users events', function () {
 
     expect($events)->toHaveCount(1)
         ->and($events[0]['id'])->toBe($ownedEvent->id)
-        ->and($events[0]['summary'])->toBe('Owned event');
+        ->and($events[0]['data']['summary'])->toBe('Owned event');
 });
 
 test('calendar page excludes events outside the planned window', function () {
@@ -130,7 +128,7 @@ test('calendar page excludes events outside the planned window', function () {
 
     expect($events)->toHaveCount(1)
         ->and($events[0]['id'])->toBe($insideWindow->id)
-        ->and($events[0]['summary'])->toBe('Inside window');
+        ->and($events[0]['data']['summary'])->toBe('Inside window');
 });
 
 test('calendar event props do not expose raw calendar data', function () {

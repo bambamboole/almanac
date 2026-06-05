@@ -11,11 +11,13 @@ it('updates event time and status through the edit endpoint', function () {
 
     $this->actingAs($user)
         ->put("/calendar/events/{$event->id}", [
-            'summary' => 'New',
-            'starts_at' => '2026-07-01T08:00:00Z',
-            'ends_at' => '2026-07-01T09:00:00Z',
-            'is_all_day' => false,
-            'status' => 'CONFIRMED',
+            'data' => [
+                'summary' => 'New',
+                'startsAt' => '2026-07-01T08:00:00Z',
+                'endsAt' => '2026-07-01T09:00:00Z',
+                'isAllDay' => false,
+                'status' => 'CONFIRMED',
+            ],
             'expected_etag' => $event->etag,
         ])
         ->assertRedirect();

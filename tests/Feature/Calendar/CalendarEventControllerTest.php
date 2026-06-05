@@ -11,7 +11,7 @@ it('updates an event from the app', function () {
 
     $this->actingAs($user)
         ->from('/calendar')
-        ->put("/calendar/events/{$event->id}", ['summary' => 'New', 'expected_etag' => $event->etag])
+        ->put("/calendar/events/{$event->id}", ['data' => ['summary' => 'New'], 'expected_etag' => $event->etag])
         ->assertRedirect('/calendar')
         ->assertInertiaFlash('toast.type', 'success')
         ->assertInertiaFlash('toast.message', 'Event updated.');
@@ -25,7 +25,7 @@ it('returns 409 on a stale etag', function () {
     $event = DavCalendarObject::factory()->for($calendar, 'calendar')->create();
 
     $this->actingAs($user)
-        ->putJson("/calendar/events/{$event->id}", ['summary' => 'Newer', 'expected_etag' => 'stale'])
+        ->putJson("/calendar/events/{$event->id}", ['data' => ['summary' => 'Newer'], 'expected_etag' => 'stale'])
         ->assertStatus(409);
 });
 
@@ -33,7 +33,7 @@ it('forbids editing another users event', function () {
     $event = DavCalendarObject::factory()->create();
 
     $this->actingAs(User::factory()->create())
-        ->putJson("/calendar/events/{$event->id}", ['summary' => 'x', 'expected_etag' => $event->etag])
+        ->putJson("/calendar/events/{$event->id}", ['data' => ['summary' => 'x'], 'expected_etag' => $event->etag])
         ->assertForbidden();
 });
 
