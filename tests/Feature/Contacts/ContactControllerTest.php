@@ -11,9 +11,9 @@ beforeEach(function () {
 test('owner can update a contact full_name', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
-    $contact = DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Original Name',
-    ]);
+    $contact = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Original Name',
+    ]))->create();
 
     $this->actingAs($user)
         ->putJson("/contacts/{$contact->id}", [
@@ -24,15 +24,15 @@ test('owner can update a contact full_name', function () {
         ->assertInertiaFlash('toast.type', 'success')
         ->assertInertiaFlash('toast.message', 'Contact updated.');
 
-    expect($contact->fresh()->full_name)->toBe('Updated Name');
+    expect($contact->fresh()->data->formattedName)->toBe('Updated Name');
 });
 
 test('stale etag returns 409', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
-    $contact = DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Original Name',
-    ]);
+    $contact = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Original Name',
+    ]))->create();
 
     $this->actingAs($user)
         ->putJson("/contacts/{$contact->id}", [
@@ -45,11 +45,10 @@ test('stale etag returns 409', function () {
 test('note is preserved when editing only the name', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
-    $contact = DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Original Name',
+    $contact = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Original Name',
         'note' => 'keep this note',
-        'card_data' => null,
-    ]);
+    ]))->create(['card_data' => null]);
 
     // card_data is auto-generated on save; re-fetch to get the generated etag
     $contact->refresh();
@@ -70,10 +69,10 @@ test('note is preserved when editing only the name', function () {
 test('contacts page payload includes note for each contact', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
-    DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Test Person',
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Test Person',
         'note' => 'my important note',
-    ]);
+    ]))->create();
 
     $this->actingAs($user)
         ->get('/contacts')
@@ -89,14 +88,12 @@ test('contacts page payload includes note for each contact', function () {
 test('contacts page payload includes structured contact fields', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
-    DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Structured Person',
-        'emails' => ['structured@example.com'],
-        'phones' => ['+1 555 0100'],
-        'email_addresses' => [
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Structured Person',
+        'emailAddresses' => [
             ['label' => 'work', 'value' => 'structured@example.com', 'types' => ['INTERNET', 'WORK']],
         ],
-        'phone_numbers' => [
+        'phoneNumbers' => [
             ['label' => 'mobile', 'value' => '+1 555 0100', 'types' => ['CELL']],
         ],
         'addresses' => [
@@ -104,12 +101,12 @@ test('contacts page payload includes structured contact fields', function () {
                 'label' => 'home',
                 'street' => '1 Payload Street',
                 'city' => 'London',
-                'postal_code' => 'EC1',
+                'postalCode' => 'EC1',
                 'country' => 'United Kingdom',
                 'types' => ['HOME'],
             ],
         ],
-    ]);
+    ]))->create();
 
     $this->actingAs($user)
         ->get('/contacts')
@@ -127,9 +124,9 @@ test('contacts page payload includes structured contact fields', function () {
 test('cannot update another users contact', function () {
     $owner = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($owner)->create();
-    $contact = DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Original Name',
-    ]);
+    $contact = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Original Name',
+    ]))->create();
 
     $otherUser = User::factory()->create();
 

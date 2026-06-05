@@ -12,11 +12,11 @@ test('authenticated user downloads their contacts as a vcf file', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
 
-    DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Ada Lovelace',
-        'given_name' => 'Ada',
-        'family_name' => 'Lovelace',
-    ]);
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Ada Lovelace',
+        'givenName' => 'Ada',
+        'familyName' => 'Lovelace',
+    ]))->create();
 
     $response = $this->actingAs($user)->get('/contacts/export');
 
@@ -37,8 +37,8 @@ test('contacts export concatenates multiple cards', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
 
-    DavCard::factory()->for($addressBook, 'addressBook')->create(['full_name' => 'Grace Hopper']);
-    DavCard::factory()->for($addressBook, 'addressBook')->create(['full_name' => 'Alan Turing']);
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData(['formattedName' => 'Grace Hopper']))->create();
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData(['formattedName' => 'Alan Turing']))->create();
 
     $body = $this->actingAs($user)->get('/contacts/export')->getContent();
 
@@ -49,10 +49,10 @@ test('contacts export concatenates multiple cards', function () {
 test('contacts export only includes the current users cards', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
-    DavCard::factory()->for($addressBook, 'addressBook')->create(['full_name' => 'Owned Contact']);
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData(['formattedName' => 'Owned Contact']))->create();
 
     $otherAddressBook = DavAddressBook::factory()->create();
-    DavCard::factory()->for($otherAddressBook, 'addressBook')->create(['full_name' => 'Other Contact']);
+    DavCard::factory()->for($otherAddressBook, 'addressBook')->state(davData(['formattedName' => 'Other Contact']))->create();
 
     $body = $this->actingAs($user)->get('/contacts/export')->getContent();
 
@@ -64,8 +64,8 @@ test('contacts export can be scoped to a single address book', function () {
     $user = User::factory()->create();
     $friends = DavAddressBook::factory()->for($user)->create(['display_name' => 'Friends']);
     $work = DavAddressBook::factory()->for($user)->create(['display_name' => 'Work']);
-    DavCard::factory()->for($friends, 'addressBook')->create(['full_name' => 'Friend Contact']);
-    DavCard::factory()->for($work, 'addressBook')->create(['full_name' => 'Work Contact']);
+    DavCard::factory()->for($friends, 'addressBook')->state(davData(['formattedName' => 'Friend Contact']))->create();
+    DavCard::factory()->for($work, 'addressBook')->state(davData(['formattedName' => 'Work Contact']))->create();
 
     $response = $this->actingAs($user)->get("/contacts/address-books/{$friends->id}/export");
 
@@ -91,9 +91,9 @@ test('contacts export cannot download another users address book', function () {
 test('contacts export can download a single contact vcard', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
-    $contact = DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Single Contact',
-    ]);
+    $contact = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Single Contact',
+    ]))->create();
 
     $response = $this->actingAs($user)->get("/contacts/{$contact->id}/export");
 

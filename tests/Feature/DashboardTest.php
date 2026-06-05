@@ -43,9 +43,8 @@ it('shows today/week/contact counts and today agenda scoped to the user', functi
     $user = User::factory()->create();
     $calendar = DavCalendar::factory()->for($user)->create(['color' => '#4F6043']);
 
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Morning planning']))->create([
         'component_type' => 'VEVENT',
-        'summary' => 'Morning planning',
         'starts_at' => now()->setTime(9, 0),
         'ends_at' => now()->setTime(10, 0),
         'is_all_day' => false,

@@ -19,18 +19,18 @@ it('creates an event from the calendar UI', function () {
         ->click('Create event')
         ->assertSee('Dentist');
 
-    expect(DavCalendarObject::query()->where('summary', 'Dentist')->exists())->toBeTrue();
+    expect(DavCalendarObject::query()->get()->contains(fn ($object): bool => $object->data->summary === 'Dentist'))->toBeTrue();
 });
 
 it('preserves the dragged time range when creating an event', function () {
     $user = User::factory()->create();
     $calendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Personal']);
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData([
         'summary' => 'Existing appointment',
-        'starts_at' => today()->setTime(8, 0),
-        'ends_at' => today()->setTime(9, 0),
-        'is_all_day' => false,
-    ]);
+        'startsAt' => today()->setTime(8, 0),
+        'endsAt' => today()->setTime(9, 0),
+        'isAllDay' => false,
+    ]))->create();
 
     $this->actingAs($user);
     $page = visit('/calendar');

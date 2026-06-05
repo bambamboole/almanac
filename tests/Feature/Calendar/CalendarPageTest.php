@@ -20,10 +20,11 @@ test('authenticated user gets the calendar page payload', function () {
         'color' => '#2563eb',
     ]);
 
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData([
         'summary' => 'Planning review',
         'location' => 'Office',
         'description' => 'Quarterly planning session',
+    ]))->create([
         'starts_at' => now()->addDay()->setTime(9, 0),
         'ends_at' => now()->addDay()->setTime(10, 0),
         'is_all_day' => false,
@@ -65,8 +66,7 @@ test('calendar page exposes date-only fields for all-day events', function () {
     $user = User::factory()->create();
     $calendar = DavCalendar::factory()->for($user)->create();
 
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Conference',
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Conference']))->create([
         'starts_at' => '2026-06-03 00:00:00',
         'ends_at' => '2026-06-04 00:00:00',
         'is_all_day' => true,
@@ -87,14 +87,12 @@ test('calendar page excludes another users events', function () {
     $calendar = DavCalendar::factory()->for($user)->create();
     $otherCalendar = DavCalendar::factory()->create();
 
-    $ownedEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Owned event',
+    $ownedEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Owned event']))->create([
         'starts_at' => now()->addDay(),
         'ends_at' => now()->addDay()->addHour(),
     ]);
 
-    DavCalendarObject::factory()->for($otherCalendar, 'calendar')->create([
-        'summary' => 'Other user event',
+    DavCalendarObject::factory()->for($otherCalendar, 'calendar')->state(davData(['summary' => 'Other user event']))->create([
         'starts_at' => now()->addDay(),
         'ends_at' => now()->addDay()->addHour(),
     ]);
@@ -111,20 +109,17 @@ test('calendar page excludes another users events', function () {
 test('calendar page excludes events outside the planned window', function () {
     $user = User::factory()->create();
     $calendar = DavCalendar::factory()->for($user)->create();
-    $insideWindow = DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Inside window',
+    $insideWindow = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Inside window']))->create([
         'starts_at' => now()->addDay(),
         'ends_at' => now()->addDay()->addHour(),
     ]);
 
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Past event',
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Past event']))->create([
         'starts_at' => now()->subMonths(2),
         'ends_at' => now()->subMonths(2)->addHour(),
     ]);
 
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Future event',
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Future event']))->create([
         'starts_at' => now()->addMonths(4),
         'ends_at' => now()->addMonths(4)->addHour(),
     ]);

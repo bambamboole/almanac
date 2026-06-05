@@ -26,13 +26,13 @@ it('creates a contact from the contacts UI', function () {
         ->click('Create contact')
         ->assertSee('Katherine Johnson');
 
-    $card = DavCard::query()->where('full_name', 'Katherine Johnson')->firstOrFail();
+    $card = DavCard::query()->get()->firstOrFail(fn ($card): bool => $card->data->formattedName === 'Katherine Johnson');
 
-    expect($card->emails)->toBe(['katherine@example.com'])
-        ->and($card->phones)->toBe(['+1 555 0100', '+1 555 0101'])
-        ->and($card->phone_numbers)->toHaveCount(2)
-        ->and($card->addresses)->toHaveCount(1)
-        ->and($card->addresses->first()->street)->toBe('100 Orbit Way');
+    expect(collect($card->data->emailAddresses)->pluck('value')->all())->toBe(['katherine@example.com'])
+        ->and(collect($card->data->phoneNumbers)->pluck('value')->all())->toBe(['+1 555 0100', '+1 555 0101'])
+        ->and($card->data->phoneNumbers)->toHaveCount(2)
+        ->and($card->data->addresses)->toHaveCount(1)
+        ->and($card->data->addresses[0]->street)->toBe('100 Orbit Way');
 });
 
 it('creates an address book from the contacts UI', function () {

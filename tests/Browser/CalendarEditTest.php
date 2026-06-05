@@ -8,9 +8,9 @@ it('edits a calendar event from the calendar page', function () {
         ->withCalendar('Personal', [
             [
                 'summary' => 'Original summary',
-                'starts_at' => today()->setTime(10, 0),
-                'ends_at' => today()->setTime(11, 0),
-                'is_all_day' => false,
+                'startsAt' => today()->setTime(10, 0),
+                'endsAt' => today()->setTime(11, 0),
+                'isAllDay' => false,
             ],
         ])
         ->create();
@@ -38,9 +38,9 @@ it('edits an event start time from the calendar page', function () {
         ->withCalendar('Personal', [
             [
                 'summary' => 'Timed event',
-                'starts_at' => today()->setTime(10, 0),
-                'ends_at' => today()->setTime(11, 0),
-                'is_all_day' => false,
+                'startsAt' => today()->setTime(10, 0),
+                'endsAt' => today()->setTime(11, 0),
+                'isAllDay' => false,
             ],
         ])
         ->create();

@@ -9,12 +9,12 @@ it('overwrites the primary email/phone while preserving a second email', functio
     $book = DavAddressBook::factory()->for($user)->create();
 
     // Seed a card whose vCard already carries two emails.
-    $card = DavCard::factory()->for($book, 'addressBook')->create([
+    $card = DavCard::factory()->for($book, 'addressBook')->state(davData([
+        'formattedName' => 'Alan Turing',
+        'emailAddresses' => [['label' => 'work', 'value' => 'alan@old.example.com', 'types' => ['INTERNET']]],
+        'phoneNumbers' => [['label' => 'mobile', 'value' => '+1 000', 'types' => ['CELL']]],
+    ]))->create([
         'card_data' => "BEGIN:VCARD\r\nVERSION:3.0\r\nUID:c1\r\nFN:Alan Turing\r\nN:Turing;Alan;;;\r\nEMAIL;TYPE=INTERNET:alan@old.example.com\r\nEMAIL;TYPE=INTERNET:alan2@example.com\r\nTEL;TYPE=CELL:+1 000\r\nEND:VCARD\r\n",
-        'emails' => ['alan@old.example.com'],
-        'email_addresses' => [['label' => 'work', 'value' => 'alan@old.example.com', 'types' => ['INTERNET']]],
-        'phones' => ['+1 000'],
-        'phone_numbers' => [['label' => 'mobile', 'value' => '+1 000', 'types' => ['CELL']]],
     ]);
 
     $this->actingAs($user)

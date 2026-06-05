@@ -10,12 +10,16 @@ it('renders the contacts page without javascript errors', function () {
         'display_name' => 'People',
     ]);
 
-    DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Ada Lovelace',
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Ada Lovelace',
         'organization' => 'Analytical Engines',
-        'emails' => ['ada@example.com'],
-        'phones' => ['+1 555 0100'],
-    ]);
+        'emailAddresses' => [
+            ['label' => 'work', 'value' => 'ada@example.com', 'types' => ['INTERNET', 'WORK']],
+        ],
+        'phoneNumbers' => [
+            ['label' => 'mobile', 'value' => '+1 555 0100', 'types' => ['CELL'], 'isPreferred' => true],
+        ],
+    ]))->create();
 
     $this->actingAs($user);
 

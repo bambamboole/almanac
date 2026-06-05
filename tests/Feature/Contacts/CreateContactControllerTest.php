@@ -22,9 +22,10 @@ it('creates a contact for an address book the user owns', function () {
         ->assertInertiaFlash('toast.type', 'success')
         ->assertInertiaFlash('toast.message', 'Contact created.');
 
-    $card = DavCard::query()->where('dav_address_book_id', $book->id)->where('full_name', 'Grace Hopper')->firstOrFail();
-    expect($card->card_data)->toContain('grace@example.com')
-        ->and($card->emails)->toContain('grace@example.com')
+    $card = DavCard::query()->where('dav_address_book_id', $book->id)->firstOrFail();
+    expect($card->data->formattedName)->toBe('Grace Hopper')
+        ->and($card->card_data)->toContain('grace@example.com')
+        ->and(collect($card->data->emailAddresses)->pluck('value')->all())->toContain('grace@example.com')
         ->and($card->card_data)->toContain('+1 555 0101');
 });
 
@@ -69,15 +70,15 @@ it('creates a contact with structured phones and addresses', function () {
 
     $card = DavCard::query()
         ->where('dav_address_book_id', $book->id)
-        ->where('full_name', 'Ada Lovelace')
         ->firstOrFail();
 
-    expect($card->emails)->toBe(['ada@work.example.com', 'ada@home.example.com'])
-        ->and($card->phones)->toBe(['+1 555 0100', '+1 555 0101'])
-        ->and($card->email_addresses)->toHaveCount(2)
-        ->and($card->phone_numbers)->toHaveCount(2)
-        ->and($card->addresses)->toHaveCount(1)
-        ->and($card->addresses->first()->street)->toBe('1 Engine Street')
+    expect($card->data->formattedName)->toBe('Ada Lovelace')
+        ->and(collect($card->data->emailAddresses)->pluck('value')->all())->toBe(['ada@work.example.com', 'ada@home.example.com'])
+        ->and(collect($card->data->phoneNumbers)->pluck('value')->all())->toBe(['+1 555 0100', '+1 555 0101'])
+        ->and($card->data->emailAddresses)->toHaveCount(2)
+        ->and($card->data->phoneNumbers)->toHaveCount(2)
+        ->and($card->data->addresses)->toHaveCount(1)
+        ->and($card->data->addresses[0]->street)->toBe('1 Engine Street')
         ->and($card->card_data)->toContain('ada@work.example.com')
         ->and($card->card_data)->toContain('+1 555 0101')
         ->and($card->card_data)->toContain('1 Engine Street');

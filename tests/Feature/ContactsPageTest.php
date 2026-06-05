@@ -20,15 +20,17 @@ test('authenticated user gets the contacts page payload', function () {
         'description' => 'Personal contacts',
     ]);
 
-    DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Ada Lovelace',
-        'given_name' => 'Ada',
-        'family_name' => 'Lovelace',
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Ada Lovelace',
+        'givenName' => 'Ada',
+        'familyName' => 'Lovelace',
         'organization' => 'Analytical Engines',
-        'emails' => ['ada@example.com', 'work@example.com'],
-        'phones' => ['+1 555 0100'],
-        'card_data' => 'raw vcard data should not be exposed',
-    ]);
+        'emailAddresses' => [
+            ['label' => 'home', 'value' => 'ada@example.com', 'types' => ['INTERNET']],
+            ['label' => 'work', 'value' => 'work@example.com', 'types' => ['INTERNET']],
+        ],
+        'phoneNumbers' => [['label' => 'mobile', 'value' => '+1 555 0100', 'types' => ['CELL']]],
+    ]))->create(['card_data' => 'raw vcard data should not be exposed']);
 
     $this->actingAs($user)
         ->get('/contacts')
@@ -64,13 +66,13 @@ test('authenticated user gets the contacts page payload', function () {
 test('contacts page excludes another users contacts', function () {
     $user = User::factory()->create();
     $addressBook = DavAddressBook::factory()->for($user)->create();
-    $ownedContact = DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Owned Contact',
-    ]);
+    $ownedContact = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Owned Contact',
+    ]))->create();
 
-    DavCard::factory()->create([
-        'full_name' => 'Other Contact',
-    ]);
+    DavCard::factory()->state(davData([
+        'formattedName' => 'Other Contact',
+    ]))->create();
 
     $contacts = $this->actingAs($user)
         ->get('/contacts')

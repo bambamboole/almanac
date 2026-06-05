@@ -5,6 +5,19 @@ use Sabre\VObject\Component\VCalendar;
 use Sabre\VObject\Component\VCard;
 use Tests\TestCase;
 
+/**
+ * Build a factory state closure that merges the given CalendarObjectData /
+ * ContactData overrides onto the factory's default `data` array, so a test can
+ * tweak a single field without restating the whole DTO payload.
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return Closure(array<string, mixed>): array{data: array<string, mixed>}
+ */
+function davData(array $overrides): Closure
+{
+    return fn (array $attributes): array => ['data' => [...$attributes['data'], ...$overrides]];
+}
+
 function calDavAuthHeader(string $username, string $password): string
 {
     return 'Basic '.base64_encode($username.':'.$password);

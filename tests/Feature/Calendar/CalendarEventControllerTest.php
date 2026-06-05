@@ -7,7 +7,7 @@ use Bambamboole\LaravelDav\Models\DavCalendarObject;
 it('updates an event from the app', function () {
     $user = User::factory()->create();
     $calendar = DavCalendar::factory()->for($user)->create();
-    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->create(['summary' => 'Old']);
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Old']))->create();
 
     $this->actingAs($user)
         ->from('/calendar')
@@ -16,7 +16,7 @@ it('updates an event from the app', function () {
         ->assertInertiaFlash('toast.type', 'success')
         ->assertInertiaFlash('toast.message', 'Event updated.');
 
-    expect($event->refresh()->summary)->toBe('New');
+    expect($event->refresh()->data->summary)->toBe('New');
 });
 
 it('returns 409 on a stale etag', function () {

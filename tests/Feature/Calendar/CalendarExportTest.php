@@ -12,8 +12,7 @@ test('authenticated user downloads their calendar as an ics file', function () {
     $user = User::factory()->create();
     $calendar = DavCalendar::factory()->for($user)->create();
 
-    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Planning review',
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Planning review']))->create([
         'starts_at' => now()->addDay()->setTime(9, 0),
         'ends_at' => now()->addDay()->setTime(10, 0),
     ]);
@@ -36,14 +35,10 @@ test('authenticated user downloads their calendar as an ics file', function () {
 test('calendar export only includes the current users events', function () {
     $user = User::factory()->create();
     $calendar = DavCalendar::factory()->for($user)->create();
-    $ownEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Owned event',
-    ]);
+    $ownEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Owned event']))->create();
 
     $otherCalendar = DavCalendar::factory()->create();
-    $otherEvent = DavCalendarObject::factory()->for($otherCalendar, 'calendar')->create([
-        'summary' => 'Other user event',
-    ]);
+    $otherEvent = DavCalendarObject::factory()->for($otherCalendar, 'calendar')->state(davData(['summary' => 'Other user event']))->create();
 
     $body = $this->actingAs($user)->get('/calendar/export')->getContent();
 
@@ -55,12 +50,8 @@ test('calendar export can be scoped to a single calendar', function () {
     $user = User::factory()->create();
     $workCalendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Work']);
     $homeCalendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Home']);
-    $workEvent = DavCalendarObject::factory()->for($workCalendar, 'calendar')->create([
-        'summary' => 'Work event',
-    ]);
-    $homeEvent = DavCalendarObject::factory()->for($homeCalendar, 'calendar')->create([
-        'summary' => 'Home event',
-    ]);
+    $workEvent = DavCalendarObject::factory()->for($workCalendar, 'calendar')->state(davData(['summary' => 'Work event']))->create();
+    $homeEvent = DavCalendarObject::factory()->for($homeCalendar, 'calendar')->state(davData(['summary' => 'Home event']))->create();
 
     $response = $this->actingAs($user)->get("/calendar/calendars/{$workCalendar->id}/export");
 

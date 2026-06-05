@@ -20,7 +20,8 @@ it('creates an event for a calendar the user owns', function () {
         ->assertInertiaFlash('toast.type', 'success')
         ->assertInertiaFlash('toast.message', 'Event created.');
 
-    expect(DavCalendarObject::query()->where('dav_calendar_id', $calendar->id)->where('summary', 'Lunch')->exists())->toBeTrue();
+    $event = DavCalendarObject::query()->where('dav_calendar_id', $calendar->id)->firstOrFail();
+    expect($event->data->summary)->toBe('Lunch');
 });
 
 it('forbids creating an event on another user\'s calendar', function () {

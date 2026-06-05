@@ -7,7 +7,7 @@ use Bambamboole\LaravelDav\Models\DavCard;
 it('deletes a contact from the UI', function () {
     $user = User::factory()->create();
     $book = DavAddressBook::factory()->for($user)->create();
-    DavCard::factory()->for($book, 'addressBook')->create(['full_name' => 'Temp Person']);
+    DavCard::factory()->for($book, 'addressBook')->state(davData(['formattedName' => 'Temp Person']))->create();
 
     $this->actingAs($user);
     $page = visit('/contacts');
@@ -18,5 +18,5 @@ it('deletes a contact from the UI', function () {
         ->click('Delete')
         ->click('Delete contact');
 
-    expect(DavCard::query()->where('full_name', 'Temp Person')->exists())->toBeFalse();
+    expect(DavCard::query()->get()->contains(fn ($card): bool => $card->data->formattedName === 'Temp Person'))->toBeFalse();
 });

@@ -20,13 +20,13 @@ it('captures dashboard, calendar and contacts screenshots', function () {
         [$work, 'Sync retro', 16, 0, 16, 30],
     ];
     foreach ($todayEvents as [$cal, $summary, $sh, $sm, $eh, $em]) {
-        DavCalendarObject::factory()->for($cal, 'calendar')->create([
-            'component_type' => 'VEVENT',
+        DavCalendarObject::factory()->for($cal, 'calendar')->state(davData([
+            'componentType' => 'VEVENT',
             'summary' => $summary,
-            'starts_at' => $today->copy()->setTime($sh, $sm),
-            'ends_at' => $today->copy()->setTime($eh, $em),
-            'is_all_day' => false,
-        ]);
+            'startsAt' => $today->copy()->setTime($sh, $sm),
+            'endsAt' => $today->copy()->setTime($eh, $em),
+            'isAllDay' => false,
+        ]))->create();
     }
 
     $spread = [
@@ -36,13 +36,13 @@ it('captures dashboard, calendar and contacts screenshots', function () {
     foreach ($spread as $i => [$offset, $summary]) {
         $cal = $i % 2 === 0 ? $personal : $work;
         $day = $today->copy()->addDays($offset);
-        DavCalendarObject::factory()->for($cal, 'calendar')->create([
-            'component_type' => 'VEVENT',
+        DavCalendarObject::factory()->for($cal, 'calendar')->state(davData([
+            'componentType' => 'VEVENT',
             'summary' => $summary,
-            'starts_at' => $day->copy()->setTime(10, 0),
-            'ends_at' => $day->copy()->setTime(11, 0),
-            'is_all_day' => false,
-        ]);
+            'startsAt' => $day->copy()->setTime(10, 0),
+            'endsAt' => $day->copy()->setTime(11, 0),
+            'isAllDay' => false,
+        ]))->create();
     }
 
     $book = DavAddressBook::factory()->for($user)->create(['display_name' => 'People']);
@@ -57,11 +57,13 @@ it('captures dashboard, calendar and contacts screenshots', function () {
         ['Barbara Liskov', 'MIT', 'barbara@example.com'],
     ];
     foreach ($people as [$name, $org, $email]) {
-        DavCard::factory()->for($book, 'addressBook')->create([
-            'full_name' => $name,
+        DavCard::factory()->for($book, 'addressBook')->state(davData([
+            'formattedName' => $name,
             'organization' => $org,
-            'emails' => [$email],
-        ]);
+            'emailAddresses' => [
+                ['label' => 'work', 'value' => $email, 'types' => ['INTERNET', 'WORK']],
+            ],
+        ]))->create();
     }
 
     $this->actingAs($user);
