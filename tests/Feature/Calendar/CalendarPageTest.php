@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -102,6 +103,46 @@ test('calendar page excludes another users events', function () {
     expect($events)->toHaveCount(1)
         ->and($events[0]['id'])->toBe($ownedEvent->id)
         ->and($events[0]['data']['summary'])->toBe('Owned event');
+});
+
+test('calendar page includes shared calendar events with recipient instance metadata', function () {
+    $owner = User::factory()->create();
+    $recipient = User::factory()->create();
+    $calendar = davCalendarFor($owner, [
+        'display_name' => 'Owner calendar',
+        'color' => '#111111',
+    ]);
+    $instance = $calendar->shareWith($recipient, DavCalendarInstance::AccessRead);
+    $instance->updateDavProperties([
+        'display_name' => 'Shared planning',
+        'color' => '#abcdef',
+    ]);
+
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Shared review']))->create([
+        'starts_at' => now()->addDay(),
+        'ends_at' => now()->addDay()->addHour(),
+    ]);
+
+    $response = $this->actingAs($recipient)->get('/calendar');
+
+    $calendars = $response->inertiaProps('calendars');
+    $events = $response->inertiaProps('events');
+
+    expect($calendars)->toHaveCount(1)
+        ->and($calendars[0]['id'])->toBe($calendar->id)
+        ->and($calendars[0]['display_name'])->toBe('Shared planning')
+        ->and($calendars[0]['color'])->toBe('#abcdef')
+        ->and($calendars[0]['access'])->toBe(DavCalendarInstance::AccessRead)
+        ->and($calendars[0]['is_owner'])->toBeFalse()
+        ->and($calendars[0]['is_shared'])->toBeTrue()
+        ->and($calendars[0]['can_write'])->toBeFalse()
+        ->and($events)->toHaveCount(1)
+        ->and($events[0]['id'])->toBe($event->id)
+        ->and($events[0]['data']['summary'])->toBe('Shared review')
+        ->and($events[0]['calendar']['display_name'])->toBe('Shared planning')
+        ->and($events[0]['calendar']['color'])->toBe('#abcdef')
+        ->and($events[0]['calendar']['access'])->toBe(DavCalendarInstance::AccessRead)
+        ->and($events[0]['calendar']['can_write'])->toBeFalse();
 });
 
 test('calendar page excludes events outside the planned window', function () {

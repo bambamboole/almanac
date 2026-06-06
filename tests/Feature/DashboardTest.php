@@ -3,6 +3,7 @@
 use App\Enums\Permission;
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavCard;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -69,5 +70,28 @@ it('shows today/week/contact counts and today agenda scoped to the user', functi
             ->where('stats.contactCount', 3)
             ->has('todayEvents', 1)
             ->where('todayEvents.0.data.summary', 'Morning planning')
+        );
+});
+
+it('includes shared calendar events in dashboard counts and today agenda', function () {
+    $owner = User::factory()->create();
+    $recipient = User::factory()->create();
+    $calendar = davCalendarFor($owner, ['display_name' => 'Owner calendar']);
+    $calendar->shareWith($recipient, DavCalendarInstance::AccessRead);
+
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Shared standup']))->create([
+        'component_type' => 'VEVENT',
+        'starts_at' => now()->setTime(9, 0),
+        'ends_at' => now()->setTime(10, 0),
+        'is_all_day' => false,
+    ]);
+
+    $this->actingAs($recipient)
+        ->get('/dashboard')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('stats.todayEventCount', 1)
+            ->where('stats.weekEventCount', 1)
+            ->has('todayEvents', 1)
+            ->where('todayEvents.0.data.summary', 'Shared standup')
         );
 });

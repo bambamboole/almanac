@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\CalendarEvent;
 use Bambamboole\LaravelDav\Dto\CalendarObjectData;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -23,7 +24,7 @@ class CalendarEventResource extends JsonResource
      *     starts_at: string,
      *     ends_at: string,
      *     is_all_day: bool,
-     *     calendar: array{id: int, display_name: string, color: string|null},
+     *     calendar: array{id: int, display_name: string, color: string|null, access: int|null, can_write: bool},
      *     data: array{
      *         uid: string|null,
      *         componentType: string|null,
@@ -42,7 +43,7 @@ class CalendarEventResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $instance = $this->calendar->ownerInstance;
+        $instance = $this->calendarInstance($request);
 
         return [
             'id' => $this->id,
@@ -53,11 +54,30 @@ class CalendarEventResource extends JsonResource
             'is_all_day' => $this->is_all_day,
             'calendar' => [
                 'id' => $this->calendar->id,
-                'display_name' => $this->string($instance->display_name),
-                'color' => $this->nullableString($instance->color),
+                'display_name' => $this->string($instance?->display_name),
+                'color' => $this->nullableString($instance?->color),
+                'access' => $instance?->access,
+                'can_write' => $this->canWrite($instance),
             ],
             'data' => $this->eventData($this->data),
         ];
+    }
+
+    private function calendarInstance(Request $request): ?DavCalendarInstance
+    {
+        $userId = $request->user()?->id;
+
+        if ($userId !== null && $this->calendar->relationLoaded('instances')) {
+            return $this->calendar->instances->firstWhere('owner_id', $userId);
+        }
+
+        if ($userId !== null) {
+            return $this->calendar->instances()
+                ->where('owner_id', $userId)
+                ->first();
+        }
+
+        return $this->calendar->ownerInstance;
     }
 
     /**
@@ -112,5 +132,13 @@ class CalendarEventResource extends JsonResource
     private function string(mixed $value): string
     {
         return is_string($value) ? $value : '';
+    }
+
+    private function canWrite(?DavCalendarInstance $instance): bool
+    {
+        return $instance !== null && in_array($instance->access, [
+            DavCalendarInstance::AccessOwner,
+            DavCalendarInstance::AccessReadWrite,
+        ], true);
     }
 }

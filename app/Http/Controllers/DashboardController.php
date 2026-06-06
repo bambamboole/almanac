@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\CalendarEventCollection;
 use App\Models\CalendarEvent;
+use App\Support\CalendarAccess;
 use Bambamboole\LaravelDav\Models\DavCard;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,13 +17,14 @@ class DashboardController extends Controller
         $user = $request->user();
         $startOfToday = now()->startOfDay();
         $startOfTomorrow = now()->addDay()->startOfDay();
+        $calendarIds = CalendarAccess::accessibleCalendarIds($user);
 
         $userEvents = fn () => CalendarEvent::query()
-            ->whereHas('calendar', fn ($query) => $query->where('owner_id', $user->id))
+            ->whereIn('dav_calendar_id', $calendarIds)
             ->where('component_type', 'VEVENT');
 
         $todayEvents = $userEvents()
-            ->with(['calendar.ownerInstance:id,dav_calendar_id,display_name,color'])
+            ->with(['calendar.instances' => fn ($query) => $query->where('owner_id', $user->id)])
             ->where('starts_at', '>=', $startOfToday)
             ->where('starts_at', '<', $startOfTomorrow)
             ->orderBy('starts_at')

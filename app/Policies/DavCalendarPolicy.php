@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Enums\Permission;
 use App\Models\User;
+use App\Support\CalendarAccess;
 use Bambamboole\LaravelDav\Models\DavCalendar;
 
 class DavCalendarPolicy
@@ -15,7 +16,7 @@ class DavCalendarPolicy
 
     public function view(User $user, DavCalendar $calendar): bool
     {
-        return $this->update($user, $calendar);
+        return CalendarAccess::canView($user, $calendar);
     }
 
     public function update(User $user, DavCalendar $calendar): bool

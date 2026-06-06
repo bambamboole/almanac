@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
 test('guests cannot export the calendar', function () {
@@ -46,6 +47,18 @@ test('calendar export only includes the current users events', function () {
         ->not->toContain($otherEvent->uid);
 });
 
+test('calendar export includes shared calendar events', function () {
+    $owner = User::factory()->create();
+    $recipient = User::factory()->create();
+    $calendar = davCalendarFor($owner);
+    $calendar->shareWith($recipient, DavCalendarInstance::AccessRead);
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Shared event']))->create();
+
+    $body = $this->actingAs($recipient)->get('/calendar/export')->getContent();
+
+    expect($body)->toContain($event->uid);
+});
+
 test('calendar export can be scoped to a single calendar', function () {
     $user = User::factory()->create();
     $workCalendar = davCalendarFor($user, ['display_name' => 'Work']);
@@ -72,6 +85,22 @@ test('calendar export cannot download another users calendar', function () {
     $this->actingAs($user)
         ->get("/calendar/calendars/{$otherCalendar->id}/export")
         ->assertForbidden();
+});
+
+test('calendar export can be scoped to a shared calendar', function () {
+    $owner = User::factory()->create();
+    $recipient = User::factory()->create();
+    $calendar = davCalendarFor($owner, ['display_name' => 'Owner calendar']);
+    $instance = $calendar->shareWith($recipient, DavCalendarInstance::AccessRead);
+    $instance->updateDavProperties(['display_name' => 'Shared planning']);
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Shared export']))->create();
+
+    $response = $this->actingAs($recipient)->get("/calendar/calendars/{$calendar->id}/export");
+
+    $response->assertOk();
+
+    expect($response->headers->get('Content-Disposition'))->toContain('shared-planning.ics');
+    expect($response->getContent())->toContain($event->uid);
 });
 
 test('calendar export returns a valid empty calendar when there are no events', function () {

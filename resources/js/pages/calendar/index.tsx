@@ -153,6 +153,10 @@ export default function CalendarIndex({ calendars, events }: Props) {
         return new Set(events.flatMap((event) => eventDayKeys(event)));
     }, [events]);
 
+    const writableCalendars = useMemo(() => {
+        return calendars.filter((calendar) => calendar.can_write);
+    }, [calendars]);
+
     const calendarEvents = useMemo<EventInput[]>(() => {
         return events.map((event) => {
             const color = event.calendar.color ?? DEFAULT_EVENT_COLOR;
@@ -183,7 +187,7 @@ export default function CalendarIndex({ calendars, events }: Props) {
 
             const event = eventsById.get(click.event.id);
 
-            if (event) {
+            if (event?.calendar.can_write) {
                 setEditingEvent(event);
             }
         },
@@ -244,7 +248,7 @@ export default function CalendarIndex({ calendars, events }: Props) {
 
             {creatingEvent && (
                 <CreateEventDialog
-                    calendars={calendars}
+                    calendars={writableCalendars}
                     open={creatingEvent}
                     defaults={createEventDefaults}
                     onClose={() => setCreatingEvent(false)}
@@ -283,7 +287,10 @@ export default function CalendarIndex({ calendars, events }: Props) {
                     />
 
                     <div className="flex items-center gap-2">
-                        <Button onClick={() => openCreateDialog(undefined)}>
+                        <Button
+                            onClick={() => openCreateDialog(undefined)}
+                            disabled={writableCalendars.length === 0}
+                        >
                             <Plus className="size-4" />
                             New event
                         </Button>
@@ -357,15 +364,21 @@ export default function CalendarIndex({ calendars, events }: Props) {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem
-                                                    data-edit-calendar={cal.id}
-                                                    onSelect={() =>
-                                                        setEditingCalendar(cal)
-                                                    }
-                                                >
-                                                    <Pencil className="size-4" />
-                                                    Edit
-                                                </DropdownMenuItem>
+                                                {cal.is_owner && (
+                                                    <DropdownMenuItem
+                                                        data-edit-calendar={
+                                                            cal.id
+                                                        }
+                                                        onSelect={() =>
+                                                            setEditingCalendar(
+                                                                cal,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Pencil className="size-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuItem asChild>
                                                     <a
                                                         href={exportSingleCalendar.url(
@@ -380,18 +393,22 @@ export default function CalendarIndex({ calendars, events }: Props) {
                                                         Export
                                                     </a>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    variant="destructive"
-                                                    data-delete-calendar={
-                                                        cal.id
-                                                    }
-                                                    onSelect={() =>
-                                                        setDeletingCalendar(cal)
-                                                    }
-                                                >
-                                                    <Trash2 className="size-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
+                                                {cal.is_owner && (
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                        data-delete-calendar={
+                                                            cal.id
+                                                        }
+                                                        onSelect={() =>
+                                                            setDeletingCalendar(
+                                                                cal,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
