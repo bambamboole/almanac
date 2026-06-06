@@ -100,9 +100,6 @@
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
             "@php artisan boost:update --ansi"
         ],
-        "post-install-cmd": [
-            "@php artisan boost:update --ansi"
-        ],
         "post-create-project-cmd": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate --ansi",
