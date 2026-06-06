@@ -12,6 +12,6 @@ class DeleteContactCard
      */
     public function handle(DavCard $card, string $expectedEtag): void
     {
-        $card->expectingEtag($expectedEtag)->delete();
+        $card->deleteDavResource($expectedEtag);
     }
 }

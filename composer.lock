@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "80320506bdf1910ae20c2f864435fa43",
+    "content-hash": "5421a025322098c5d0acad12c6d4ed2a",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -63,16 +63,16 @@
         },
         {
             "name": "bambamboole/laravel-dav",
-            "version": "dev-main",
+            "version": "0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bambamboole/laravel-dav.git",
-                "reference": "939355714afdf9a221b56a5e7154ed7421a2b67e"
+                "reference": "09844476286e150c81648b51ae8b4df9bfdef367"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bambamboole/laravel-dav/zipball/939355714afdf9a221b56a5e7154ed7421a2b67e",
-                "reference": "939355714afdf9a221b56a5e7154ed7421a2b67e",
+                "url": "https://api.github.com/repos/bambamboole/laravel-dav/zipball/09844476286e150c81648b51ae8b4df9bfdef367",
+                "reference": "09844476286e150c81648b51ae8b4df9bfdef367",
                 "shasum": ""
             },
             "require": {
@@ -93,7 +93,6 @@
                 "orchestra/testbench": "^10.0 || ^11.0",
                 "pestphp/pest": "^4.7"
             },
-            "default-branch": true,
             "type": "library",
             "extra": {
                 "laravel": {
@@ -137,7 +136,7 @@
                 "issues": "https://github.com/bambamboole/laravel-dav/issues",
                 "source": "https://github.com/bambamboole/laravel-dav"
             },
-            "time": "2026-06-05T23:29:26+00:00"
+            "time": "2026-06-06T00:51:40+00:00"
         },
         {
             "name": "brick/math",
@@ -15067,7 +15066,6 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "bambamboole/laravel-dav": 20,
         "laravel/wayfinder": 20
     },
     "prefer-stable": true,

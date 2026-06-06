@@ -55,7 +55,14 @@ class DatabaseSeeder extends Seeder
 
         // CalDAV/CardDAV clients require TLS, and Herd serves the .test site over https.
         $baseUrl = str_replace('http://', 'https://', rtrim((string) config('app.url'), '/'));
-        $server = $baseUrl.rtrim((string) config('dav.base_uri'), '/').'/';
+        $baseUri = config('dav.base_uri');
+
+        if (! is_string($baseUri) || $baseUri === '') {
+            $prefix = trim((string) config('dav.route.prefix', 'dav'), '/');
+            $baseUri = $prefix === '' ? '/' : "/{$prefix}/";
+        }
+
+        $server = rtrim($baseUrl.'/'.trim($baseUri, '/'), '/').'/';
 
         $this->command->newLine();
         $this->command->info('DAV credential seeded — connect your calendar/contacts client with:');

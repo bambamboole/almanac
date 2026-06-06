@@ -15,9 +15,7 @@ class UpdateContactCard
      */
     public function handle(DavCard $card, array $fields, string $expectedEtag): DavCard
     {
-        $card->expectingEtag($expectedEtag);
-        $card->data = DtoFactory::contactData($card->data, $fields);
-        $card->save();
+        $card->replaceWith(DtoFactory::contactData($card->data, $fields), $expectedEtag);
 
         return $card->refresh();
     }

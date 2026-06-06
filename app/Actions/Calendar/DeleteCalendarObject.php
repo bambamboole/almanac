@@ -12,6 +12,6 @@ class DeleteCalendarObject
      */
     public function handle(DavCalendarObject $object, string $expectedEtag): void
     {
-        $object->expectingEtag($expectedEtag)->delete();
+        $object->deleteDavResource($expectedEtag);
     }
 }

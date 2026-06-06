@@ -13,10 +13,7 @@ class CreateContactCard
      */
     public function handle(DavAddressBook $addressBook, array $fields): DavCard
     {
-        $card = DavCard::query()->create([
-            'dav_address_book_id' => $addressBook->id,
-            'data' => DtoFactory::contactData($fields),
-        ]);
+        $card = $addressBook->putContact(DtoFactory::contactData($fields));
 
         return $card->refresh();
     }

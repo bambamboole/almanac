@@ -15,14 +15,11 @@ class CreateCalendarObject
     {
         $calendar->loadMissing('ownerInstance');
 
-        $object = DavCalendarObject::query()->create([
-            'dav_calendar_id' => $calendar->id,
-            'data' => DtoFactory::calendarObjectData([
-                'componentType' => 'VEVENT',
-                'timezone' => $calendar->ownerInstance?->timezone,
-                ...$data,
-            ]),
-        ]);
+        $object = $calendar->putObject(DtoFactory::calendarObjectData([
+            'componentType' => 'VEVENT',
+            'timezone' => $calendar->ownerInstance?->timezone,
+            ...$data,
+        ]));
 
         return $object->refresh();
     }

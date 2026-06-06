@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Permission;
 use Bambamboole\LaravelDav\Contracts\DavOwner;
+use Bambamboole\LaravelDav\Models\Concerns\HasDavCollections;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
 use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarInstance;
@@ -73,7 +74,7 @@ use Laravel\Passkeys\Passkey;
 class User extends Authenticatable implements DavOwner, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasDavCollections, HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.

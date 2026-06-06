@@ -16,8 +16,7 @@ class AddressBookManagementController extends Controller
     {
         $data = $request->validated();
 
-        DavAddressBook::query()->create([
-            'owner_id' => $request->user()->id,
+        $request->user()->createDavAddressBook([
             'uri' => Str::slug($data['display_name']) ?: (string) Str::uuid(),
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,
@@ -31,7 +30,7 @@ class AddressBookManagementController extends Controller
 
     public function update(UpdateAddressBookRequest $request, DavAddressBook $addressBook): RedirectResponse
     {
-        $addressBook->update($request->validated());
+        $addressBook->updateDavProperties($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Address book updated.')]);
 
@@ -42,7 +41,7 @@ class AddressBookManagementController extends Controller
     {
         $this->authorize('delete', $addressBook);
 
-        $addressBook->delete();
+        $addressBook->deleteDavAddressBook();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Address book deleted.')]);
 

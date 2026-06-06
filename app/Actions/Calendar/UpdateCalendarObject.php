@@ -15,9 +15,7 @@ class UpdateCalendarObject
      */
     public function handle(DavCalendarObject $object, array $data, string $expectedEtag): DavCalendarObject
     {
-        $object->expectingEtag($expectedEtag);
-        $object->data = DtoFactory::calendarObjectData($object->data, $data);
-        $object->save();
+        $object->replaceWith(DtoFactory::calendarObjectData($object->data, $data), $expectedEtag);
 
         return $object->refresh();
     }
