@@ -377,21 +377,15 @@ export default function CalendarIndex({ calendars }: Props) {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                {cal.is_owner && (
-                                                    <DropdownMenuItem
-                                                        data-edit-calendar={
-                                                            cal.id
-                                                        }
-                                                        onSelect={() =>
-                                                            setEditingCalendar(
-                                                                cal,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Pencil className="size-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                )}
+                                                <DropdownMenuItem
+                                                    data-edit-calendar={cal.id}
+                                                    onSelect={() =>
+                                                        setEditingCalendar(cal)
+                                                    }
+                                                >
+                                                    <Pencil className="size-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem asChild>
                                                     <a
                                                         href={exportSingleCalendar.url(
@@ -406,22 +400,20 @@ export default function CalendarIndex({ calendars }: Props) {
                                                         Export
                                                     </a>
                                                 </DropdownMenuItem>
-                                                {cal.is_owner && (
-                                                    <DropdownMenuItem
-                                                        variant="destructive"
-                                                        data-delete-calendar={
-                                                            cal.id
-                                                        }
-                                                        onSelect={() =>
-                                                            setDeletingCalendar(
-                                                                cal,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                )}
+                                                <DropdownMenuItem
+                                                    variant="destructive"
+                                                    data-delete-calendar={
+                                                        cal.id
+                                                    }
+                                                    onSelect={() =>
+                                                        setDeletingCalendar(cal)
+                                                    }
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                    {cal.is_owner
+                                                        ? 'Delete'
+                                                        : 'Remove'}
+                                                </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>

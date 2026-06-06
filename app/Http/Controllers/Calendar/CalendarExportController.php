@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Calendar;
 use App\Http\Controllers\Controller;
 use App\Support\CalendarAccess;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
@@ -24,16 +25,11 @@ class CalendarExportController extends Controller
         return $this->responseFor($calendars->all(), 'calendar.ics');
     }
 
-    public function show(Request $request, DavCalendar $calendar): Response
+    public function show(Request $request, DavCalendarInstance $calendarInstance): Response
     {
-        $this->authorize('view', $calendar);
+        $this->authorize('view', $calendarInstance);
 
-        $calendar->loadMissing('instances');
-
-        $instance = CalendarAccess::instanceFor($request->user(), $calendar)
-            ?? $calendar->ownerInstance()->firstOrFail();
-
-        return $this->responseFor([$calendar->load('objects')], Str::slug($instance->display_name).'.ics');
+        return $this->responseFor([$calendarInstance->calendar->load('objects')], Str::slug($calendarInstance->display_name).'.ics');
     }
 
     /**

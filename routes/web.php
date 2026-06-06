@@ -43,9 +43,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('calendar/export', CalendarExportController::class)->name('calendar.export');
 
     Route::post('/calendar/calendars', [CalendarManagementController::class, 'store'])->name('calendar.calendars.store');
-    Route::get('/calendar/calendars/{calendar}/export', [CalendarExportController::class, 'show'])->name('calendar.calendars.export');
-    Route::patch('/calendar/calendars/{calendar}', [CalendarManagementController::class, 'update'])->name('calendar.calendars.update');
-    Route::delete('/calendar/calendars/{calendar}', [CalendarManagementController::class, 'destroy'])->name('calendar.calendars.destroy');
+    Route::get('/calendar/calendars/{calendarInstance}/export', [CalendarExportController::class, 'show'])->name('calendar.calendars.export');
+    Route::patch('/calendar/calendars/{calendarInstance}', [CalendarManagementController::class, 'update'])->name('calendar.calendars.update');
+    Route::delete('/calendar/calendars/{calendarInstance}', [CalendarManagementController::class, 'destroy'])->name('calendar.calendars.destroy');
 
     Route::post('/calendar/events', [CalendarEventController::class, 'store'])->name('calendar.events.store');
     Route::put('/calendar/events/{event}', [CalendarEventController::class, 'update'])->name('calendar.events.update');

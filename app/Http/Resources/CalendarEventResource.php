@@ -29,7 +29,7 @@ class CalendarEventResource extends JsonResource
      *     starts_at: ?string,
      *     ends_at: ?string,
      *     is_all_day: bool,
-     *     calendar: array{id: int, display_name: string|null, color: string|null, access: int|null, can_write: bool},
+     *     calendar: array{id: int, dav_calendar_id: int, display_name: string|null, color: string|null, access: int|null, can_write: bool},
      *     data: array{
      *         uid: string|null,
      *         componentType: string|null,
@@ -56,7 +56,8 @@ class CalendarEventResource extends JsonResource
             'ends_at' => $this->ends_at === null ? null : (string) $this->ends_at->toISOString(),
             'is_all_day' => $this->is_all_day,
             'calendar' => [
-                'id' => $this->calendarInstance->dav_calendar_id,
+                'id' => $this->calendarInstance->id,
+                'dav_calendar_id' => $this->calendarInstance->dav_calendar_id,
                 'display_name' => $this->calendarInstance->display_name,
                 'color' => $this->calendarInstance->color,
                 'access' => $this->calendarInstance->access,

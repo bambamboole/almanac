@@ -328,29 +328,31 @@ export function EditCalendarDialog({
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                        {optionalCalendarComponents.map((component) => (
-                            <label
-                                key={component.value}
-                                className="flex items-center gap-2 text-sm"
-                            >
-                                <input
-                                    type="checkbox"
-                                    aria-label={component.label}
-                                    checked={form.data.components.includes(
-                                        component.value,
-                                    )}
-                                    onChange={(e) =>
-                                        toggleComponent(
+                    {calendar.is_owner && (
+                        <div className="flex flex-col gap-2">
+                            {optionalCalendarComponents.map((component) => (
+                                <label
+                                    key={component.value}
+                                    className="flex items-center gap-2 text-sm"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        aria-label={component.label}
+                                        checked={form.data.components.includes(
                                             component.value,
-                                            e.target.checked,
-                                        )
-                                    }
-                                />
-                                {component.label}
-                            </label>
-                        ))}
-                    </div>
+                                        )}
+                                        onChange={(e) =>
+                                            toggleComponent(
+                                                component.value,
+                                                e.target.checked,
+                                            )
+                                        }
+                                    />
+                                    {component.label}
+                                </label>
+                            ))}
+                        </div>
+                    )}
 
                     <DialogFooter>
                         <Button
@@ -403,15 +405,31 @@ export function DeleteCalendarDialog({
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Delete calendar?</DialogTitle>
+                    <DialogTitle>
+                        {calendar.is_owner
+                            ? 'Delete calendar?'
+                            : 'Remove calendar?'}
+                    </DialogTitle>
                 </DialogHeader>
 
                 <p className="text-sm text-muted-foreground">
-                    This will permanently remove{' '}
-                    <span className="font-medium text-foreground">
-                        {calendar.display_name}
-                    </span>{' '}
-                    and its events.
+                    {calendar.is_owner ? (
+                        <>
+                            This will permanently remove{' '}
+                            <span className="font-medium text-foreground">
+                                {calendar.display_name}
+                            </span>{' '}
+                            and its events.
+                        </>
+                    ) : (
+                        <>
+                            This will remove{' '}
+                            <span className="font-medium text-foreground">
+                                {calendar.display_name}
+                            </span>{' '}
+                            from your calendar list.
+                        </>
+                    )}
                 </p>
 
                 <form onSubmit={submit} className="grid gap-4">
@@ -428,7 +446,9 @@ export function DeleteCalendarDialog({
                             variant="destructive"
                             disabled={form.processing}
                         >
-                            Delete calendar
+                            {calendar.is_owner
+                                ? 'Delete calendar'
+                                : 'Remove calendar'}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -471,7 +491,7 @@ export function CreateEventDialog({
             : new Date(start.getTime() + 60 * 60 * 1000);
 
     const form = useForm<CreateEventFormData>({
-        calendar_id: calendars[0] ? String(calendars[0].id) : '',
+        calendar_id: calendars[0] ? String(calendars[0].dav_calendar_id) : '',
         summary: '',
         description: '',
         location: '',
@@ -538,7 +558,7 @@ export function CreateEventDialog({
                                 {calendars.map((cal) => (
                                     <SelectItem
                                         key={cal.id}
-                                        value={String(cal.id)}
+                                        value={String(cal.dav_calendar_id)}
                                     >
                                         {cal.display_name}
                                     </SelectItem>

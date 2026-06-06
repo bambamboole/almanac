@@ -20,6 +20,7 @@ test('authenticated user gets the calendar page payload', function () {
         'display_name' => 'Personal',
         'color' => '#2563eb',
     ]);
+    $calendarInstance = $calendar->ownerInstance()->firstOrFail();
 
     DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData([
         'summary' => 'Planning review',
@@ -40,14 +41,16 @@ test('authenticated user gets the calendar page payload', function () {
             ->has('window.start')
             ->has('window.end')
             ->has('calendars', 1, fn (Assert $page) => $page
-                ->where('id', $calendar->id)
+                ->where('id', $calendarInstance->id)
+                ->where('dav_calendar_id', $calendar->id)
                 ->where('display_name', 'Personal')
                 ->where('color', '#2563eb')
                 ->has('events', 1, fn (Assert $page) => $page
                     ->where('data.summary', 'Planning review')
                     ->where('data.location', 'Office')
                     ->where('data.description', 'Quarterly planning session')
-                    ->where('calendar.id', $calendar->id)
+                    ->where('calendar.id', $calendarInstance->id)
+                    ->where('calendar.dav_calendar_id', $calendar->id)
                     ->where('calendar.display_name', 'Personal')
                     ->where('calendar.color', '#2563eb')
                     ->where('is_all_day', false)
@@ -129,7 +132,8 @@ test('calendar page includes shared calendar events with recipient instance meta
     $events = $calendars[0]['events'];
 
     expect($calendars)->toHaveCount(1)
-        ->and($calendars[0]['id'])->toBe($calendar->id)
+        ->and($calendars[0]['id'])->toBe($instance->id)
+        ->and($calendars[0]['dav_calendar_id'])->toBe($calendar->id)
         ->and($calendars[0]['display_name'])->toBe('Shared planning')
         ->and($calendars[0]['color'])->toBe('#abcdef')
         ->and($calendars[0]['access'])->toBe(DavCalendarInstance::AccessRead)
@@ -139,6 +143,8 @@ test('calendar page includes shared calendar events with recipient instance meta
         ->and($events)->toHaveCount(1)
         ->and($events[0]['id'])->toBe($event->id)
         ->and($events[0]['data']['summary'])->toBe('Shared review')
+        ->and($events[0]['calendar']['id'])->toBe($instance->id)
+        ->and($events[0]['calendar']['dav_calendar_id'])->toBe($calendar->id)
         ->and($events[0]['calendar']['display_name'])->toBe('Shared planning')
         ->and($events[0]['calendar']['color'])->toBe('#abcdef')
         ->and($events[0]['calendar']['access'])->toBe(DavCalendarInstance::AccessRead)

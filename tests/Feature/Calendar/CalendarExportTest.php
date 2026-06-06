@@ -63,10 +63,11 @@ test('calendar export can be scoped to a single calendar', function () {
     $user = User::factory()->create();
     $workCalendar = davCalendarFor($user, ['display_name' => 'Work']);
     $homeCalendar = davCalendarFor($user, ['display_name' => 'Home']);
+    $workCalendarInstance = $workCalendar->ownerInstance()->firstOrFail();
     $workEvent = DavCalendarObject::factory()->for($workCalendar, 'calendar')->state(davData(['summary' => 'Work event']))->create();
     $homeEvent = DavCalendarObject::factory()->for($homeCalendar, 'calendar')->state(davData(['summary' => 'Home event']))->create();
 
-    $response = $this->actingAs($user)->get("/calendar/calendars/{$workCalendar->id}/export");
+    $response = $this->actingAs($user)->get("/calendar/calendars/{$workCalendarInstance->id}/export");
 
     $response->assertOk();
 
@@ -80,10 +81,11 @@ test('calendar export can be scoped to a single calendar', function () {
 
 test('calendar export cannot download another users calendar', function () {
     $user = User::factory()->create();
-    $otherCalendar = DavCalendar::factory()->create();
+    $otherCalendar = davCalendarFor(User::factory()->create());
+    $otherCalendarInstance = $otherCalendar->ownerInstance()->firstOrFail();
 
     $this->actingAs($user)
-        ->get("/calendar/calendars/{$otherCalendar->id}/export")
+        ->get("/calendar/calendars/{$otherCalendarInstance->id}/export")
         ->assertForbidden();
 });
 
@@ -95,7 +97,7 @@ test('calendar export can be scoped to a shared calendar', function () {
     $instance->updateDavProperties(['display_name' => 'Shared planning']);
     $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Shared export']))->create();
 
-    $response = $this->actingAs($recipient)->get("/calendar/calendars/{$calendar->id}/export");
+    $response = $this->actingAs($recipient)->get("/calendar/calendars/{$instance->id}/export");
 
     $response->assertOk();
 

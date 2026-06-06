@@ -18,6 +18,7 @@ class CalendarInstanceResource extends JsonResource
     /**
      * @return array{
      *     id: int,
+     *     dav_calendar_id: int,
      *     display_name: string,
      *     description: string|null,
      *     color: string|null,
@@ -37,7 +38,7 @@ class CalendarInstanceResource extends JsonResource
      *         starts_at: string|null,
      *         ends_at: string|null,
      *         is_all_day: bool,
-     *         calendar: array{id: int, display_name: string|null, color: string|null, access: int|null, can_write: bool},
+     *         calendar: array{id: int, dav_calendar_id: int, display_name: string|null, color: string|null, access: int|null, can_write: bool},
      *         data: array{
      *             uid: string|null,
      *             componentType: string|null,
@@ -58,7 +59,8 @@ class CalendarInstanceResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->dav_calendar_id,
+            'id' => $this->id,
+            'dav_calendar_id' => $this->dav_calendar_id,
             'display_name' => $this->display_name,
             'description' => $this->description,
             'color' => $this->color,
@@ -98,7 +100,7 @@ class CalendarInstanceResource extends JsonResource
      *     starts_at: string|null,
      *     ends_at: string|null,
      *     is_all_day: bool,
-     *     calendar: array{id: int, display_name: string|null, color: string|null, access: int|null, can_write: bool},
+     *     calendar: array{id: int, dav_calendar_id: int, display_name: string|null, color: string|null, access: int|null, can_write: bool},
      *     data: array{
      *         uid: string|null,
      *         componentType: string|null,
