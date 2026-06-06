@@ -13,7 +13,7 @@ class ContactExportController extends Controller
 {
     public function __invoke(Request $request): Response
     {
-        return $this->responseFor($request->user()->addressBooks()->with('cards')->get()->all(), 'contacts.vcf');
+        return $this->responseFor($request->user()->davAddressBooks()->with('cards')->get()->all(), 'contacts.vcf');
     }
 
     public function show(Request $request, DavAddressBook $addressBook): Response

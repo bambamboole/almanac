@@ -7,10 +7,10 @@ use Illuminate\Support\Carbon;
 it('creates a named calendar with a given number of events', function () {
     $user = User::factory()->withCalendar('Work', 3)->create();
 
-    $calendar = $user->calendars()->sole();
+    $calendar = $user->davCalendars()->sole();
     $calendarInstance = $calendar->ownerInstance;
 
-    expect($user->calendars)->toHaveCount(1)
+    expect($user->davCalendars)->toHaveCount(1)
         ->and($calendarInstance?->display_name)->toBe('Work')
         ->and($calendarInstance?->uri)->toBe('work')
         ->and($calendar->objects)->toHaveCount(3);
@@ -22,7 +22,7 @@ it('creates calendar events from attribute-override maps', function () {
         ['summary' => 'Retro'],
     ])->create();
 
-    $summaries = $user->calendars()->sole()->objects->map(fn ($object) => $object->data->summary);
+    $summaries = $user->davCalendars()->sole()->objects->map(fn ($object) => $object->data->summary);
 
     expect($summaries)->toHaveCount(2)
         ->and($summaries->all())->toContain('Standup', 'Retro');
@@ -34,7 +34,7 @@ it('keeps generated events within the given period', function () {
 
     $user = User::factory()->withCalendar('Trip', 5, [$start, $end])->create();
 
-    $user->calendars()->sole()->objects->each(function ($object) use ($start, $end): void {
+    $user->davCalendars()->sole()->objects->each(function ($object) use ($start, $end): void {
         expect($object->starts_at->betweenIncluded($start, $end))->toBeTrue();
     });
 });
@@ -42,7 +42,7 @@ it('keeps generated events within the given period', function () {
 it('produces parseable payloads for generated events', function () {
     $user = User::factory()->withCalendar('Personal', 1)->create();
 
-    $object = $user->calendars()->sole()->objects()->sole();
+    $object = $user->davCalendars()->sole()->objects()->sole();
     $parsed = app(CalendarObjectParser::class)->parse($object->calendar_data);
 
     expect($parsed->summary)->toBe($object->data->summary)
@@ -55,16 +55,16 @@ it('supports multiple calendars on one user', function () {
         ->withCalendar('Personal', 2)
         ->create();
 
-    expect($user->calendars)->toHaveCount(2)
-        ->and($user->calendarInstances->pluck('display_name')->all())->toContain('Work', 'Personal');
+    expect($user->davCalendars)->toHaveCount(2)
+        ->and($user->davCalendarInstances->pluck('display_name')->all())->toContain('Work', 'Personal');
 });
 
 it('creates a personal address book with a given number of contacts', function () {
     $user = User::factory()->withContacts(4)->create();
 
-    $addressBook = $user->addressBooks()->sole();
+    $addressBook = $user->davAddressBooks()->sole();
 
-    expect($user->addressBooks)->toHaveCount(1)
+    expect($user->davAddressBooks)->toHaveCount(1)
         ->and($addressBook->display_name)->toBe('Personal')
         ->and($addressBook->cards)->toHaveCount(4);
 });
@@ -74,7 +74,7 @@ it('creates contacts from attribute-override maps', function () {
         ['formattedName' => 'Ada Lovelace', 'emailAddresses' => [['value' => 'ada@example.com']]],
     ])->create();
 
-    $card = $user->addressBooks()->sole()->cards()->sole();
+    $card = $user->davAddressBooks()->sole()->cards()->sole();
 
     expect($card->data->formattedName)->toBe('Ada Lovelace')
         ->and(collect($card->data->emailAddresses)->pluck('value')->all())->toBe(['ada@example.com'])

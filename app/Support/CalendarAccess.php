@@ -15,7 +15,7 @@ class CalendarAccess
      */
     public static function accessibleCalendarIds(User $user): Collection
     {
-        return $user->calendarInstances()
+        return $user->davCalendarInstances()
             ->pluck('dav_calendar_id');
     }
 

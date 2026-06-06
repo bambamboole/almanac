@@ -40,16 +40,25 @@ class UserResource extends JsonResource
             'created_at' => $this->toIsoString($this->created_at),
             'updated_at' => $this->toIsoString($this->updated_at),
             'role' => RoleResource::make($this->whenLoaded('role')),
-            'calendars_count' => $this->whenCounted('calendars'),
-            'calendar_instances_count' => $this->whenCounted('calendarInstances'),
-            'address_books_count' => $this->whenCounted('addressBooks'),
+            'calendars_count' => $this->when(
+                array_key_exists('calendars_count', $this->resource->getAttributes()),
+                fn (): int => (int) $this->calendars_count,
+            ),
+            'calendar_instances_count' => $this->when(
+                array_key_exists('calendar_instances_count', $this->resource->getAttributes()),
+                fn (): int => (int) $this->calendar_instances_count,
+            ),
+            'address_books_count' => $this->when(
+                array_key_exists('address_books_count', $this->resource->getAttributes()),
+                fn (): int => (int) $this->address_books_count,
+            ),
             'calendar_instances' => $this->whenLoaded(
-                'calendarInstances',
-                fn () => CalendarInstanceResource::collection($this->calendarInstances),
+                'davCalendarInstances',
+                fn () => CalendarInstanceResource::collection($this->davCalendarInstances),
             ),
             'address_books' => $this->whenLoaded(
-                'addressBooks',
-                fn () => ContactAddressBookResource::collection($this->addressBooks),
+                'davAddressBooks',
+                fn () => ContactAddressBookResource::collection($this->davAddressBooks),
             ),
         ];
     }

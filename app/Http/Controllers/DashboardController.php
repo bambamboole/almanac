@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $endOfWeek = now()->startOfWeek()->addWeek();
 
         $user->load([
-            'calendarInstances' => fn ($query) => $query
+            'davCalendarInstances' => fn ($query) => $query
                 ->with(['calendar' => fn ($query) => $query
                     ->with(['objects' => fn ($query) => $query
                         ->where('component_type', 'VEVENT')
@@ -25,12 +25,16 @@ class DashboardController extends Controller
                     ]),
                 ])
                 ->orderBy('display_name'),
-            'addressBooks' => fn ($query) => $query
+            'davAddressBooks' => fn ($query) => $query
                 ->withCount('cards')
                 ->orderBy('display_name'),
         ]);
 
-        $user->loadCount(['calendars', 'calendarInstances', 'addressBooks']);
+        $user->loadCount([
+            'davCalendars as calendars_count',
+            'davCalendarInstances as calendar_instances_count',
+            'davAddressBooks as address_books_count',
+        ]);
 
         return Inertia::render('dashboard');
     }
