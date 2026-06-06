@@ -25,16 +25,18 @@ it('stores fetches and deletes contact cards through carddav', function () {
 
     cardDavPut($this, $path, $authHeader, $payload)->assertSuccessful();
 
-    expect(DavCard::query()->where('uri', 'contact-1.vcf')->first())
+    $card = DavCard::query()->where('uri', 'contact-1.vcf')->first();
+
+    expect($card)
         ->not->toBeNull()
-        ->uid->toBe('contact-1')
-        ->full_name->toBe('Ada Lovelace')
-        ->given_name->toBe('Ada')
-        ->family_name->toBe('Lovelace')
-        ->organization->toBe('Analytical Engines')
-        ->emails->toBe(['ada@example.com'])
-        ->phones->toBe(['+491234567'])
-        ->card_data->toBe($payload);
+        ->card_data->toBe($payload)
+        ->and($card->data->uid)->toBe('contact-1')
+        ->and($card->data->formattedName)->toBe('Ada Lovelace')
+        ->and($card->data->givenName)->toBe('Ada')
+        ->and($card->data->familyName)->toBe('Lovelace')
+        ->and($card->data->organization)->toBe('Analytical Engines')
+        ->and(collect($card->data->emailAddresses)->pluck('value')->all())->toBe(['ada@example.com'])
+        ->and(collect($card->data->phoneNumbers)->pluck('value')->all())->toBe(['+491234567']);
 
     $this->withHeaders(['Authorization' => $authHeader])
         ->get($path)
@@ -89,12 +91,12 @@ it('updates existing contact cards through carddav', function () {
         $card->refresh();
 
         expect(DavCard::query()->where('uri', 'contact-1.vcf')->count())->toBe(1)
-            ->and($card->full_name)->toBe('Ada Byron')
-            ->and($card->given_name)->toBe('Ada')
-            ->and($card->family_name)->toBe('Byron')
-            ->and($card->organization)->toBe('Analytical Engines')
-            ->and($card->emails)->toBe(['ada@example.com', 'ada@analytical.example'])
-            ->and($card->phones)->toBe(['+491234567'])
+            ->and($card->data->formattedName)->toBe('Ada Byron')
+            ->and($card->data->givenName)->toBe('Ada')
+            ->and($card->data->familyName)->toBe('Byron')
+            ->and($card->data->organization)->toBe('Analytical Engines')
+            ->and(collect($card->data->emailAddresses)->pluck('value')->all())->toBe(['ada@example.com', 'ada@analytical.example'])
+            ->and(collect($card->data->phoneNumbers)->pluck('value')->all())->toBe(['+491234567'])
             ->and($card->etag)->toBe(sha1($updatedPayload))
             ->and($card->etag)->not->toBe(sha1($originalPayload))
             ->and($card->size)->toBe(strlen($updatedPayload))
@@ -151,115 +153,114 @@ it('maps apple contact fields into typed eloquent value objects', function () {
 
     $card = DavCard::query()->where('uri', 'contact-apple.vcf')->firstOrFail();
 
-    expect($card->contact_type)->toBe('organization')
-        ->and($card->middle_name)->toBe('Augusta')
-        ->and($card->name_prefix)->toBe('Countess')
-        ->and($card->nickname)->toBe('Enchantress of Numbers')
-        ->and($card->department)->toBe('Research')
-        ->and($card->job_title)->toBe('Mathematician')
-        ->and($card->note)->toBe('First programmer')
-        ->and($card->birthday)->toBeInstanceOf(ContactDate::class)
-        ->and($card->birthday->year)->toBe(1815)
-        ->and($card->birthday->month)->toBe(12)
-        ->and($card->birthday->day)->toBe(10);
+    expect($card->data->contactType)->toBe('organization')
+        ->and($card->data->middleName)->toBe('Augusta')
+        ->and($card->data->namePrefix)->toBe('Countess')
+        ->and($card->data->nickname)->toBe('Enchantress of Numbers')
+        ->and($card->data->department)->toBe('Research')
+        ->and($card->data->jobTitle)->toBe('Mathematician')
+        ->and($card->data->note)->toBe('First programmer')
+        ->and($card->data->birthday)->toBeInstanceOf(ContactDate::class)
+        ->and($card->data->birthday->year)->toBe(1815)
+        ->and($card->data->birthday->month)->toBe(12)
+        ->and($card->data->birthday->day)->toBe(10);
 
-    expect($card->pronouns)->toHaveCount(1)
-        ->and($card->pronouns->first())->toBeInstanceOf(ContactPronoun::class)
-        ->and($card->pronouns->first()->language)->toBe('en')
-        ->and($card->pronouns->first()->value)->toBe('she/her');
+    expect($card->data->pronouns)->toHaveCount(1)
+        ->and($card->data->pronouns[0])->toBeInstanceOf(ContactPronoun::class)
+        ->and($card->data->pronouns[0]->language)->toBe('en')
+        ->and($card->data->pronouns[0]->value)->toBe('she/her');
 
-    expect($card->phone_numbers)->toHaveCount(1)
-        ->and($card->phone_numbers->first())->toBeInstanceOf(ContactPhoneNumber::class)
-        ->and($card->phone_numbers->first()->label)->toBe('iPhone')
-        ->and($card->phone_numbers->first()->value)->toBe('+1 (555) 010-0')
-        ->and($card->phone_numbers->first()->isPreferred)->toBeTrue();
+    expect($card->data->phoneNumbers)->toHaveCount(1)
+        ->and($card->data->phoneNumbers[0])->toBeInstanceOf(ContactPhoneNumber::class)
+        ->and($card->data->phoneNumbers[0]->label)->toBe('iPhone')
+        ->and($card->data->phoneNumbers[0]->value)->toBe('+1 (555) 010-0')
+        ->and($card->data->phoneNumbers[0]->isPreferred)->toBeTrue();
 
-    expect($card->email_addresses)->toHaveCount(1)
-        ->and($card->email_addresses->first())->toBeInstanceOf(ContactEmailAddress::class)
-        ->and($card->email_addresses->first()->label)->toBe('Personal')
-        ->and($card->email_addresses->first()->value)->toBe('ada@example.com');
+    expect($card->data->emailAddresses)->toHaveCount(1)
+        ->and($card->data->emailAddresses[0])->toBeInstanceOf(ContactEmailAddress::class)
+        ->and($card->data->emailAddresses[0]->label)->toBe('Personal')
+        ->and($card->data->emailAddresses[0]->value)->toBe('ada@example.com');
 
-    expect($card->addresses)->toHaveCount(1)
-        ->and($card->addresses->first())->toBeInstanceOf(ContactPostalAddress::class)
-        ->and($card->addresses->first()->label)->toBe('Billing')
-        ->and($card->addresses->first()->street)->toBe('12 St James Square')
-        ->and($card->addresses->first()->city)->toBe('London')
-        ->and($card->addresses->first()->postalCode)->toBe('SW1Y 4LB')
-        ->and($card->addresses->first()->country)->toBe('United Kingdom');
+    expect($card->data->addresses)->toHaveCount(1)
+        ->and($card->data->addresses[0])->toBeInstanceOf(ContactPostalAddress::class)
+        ->and($card->data->addresses[0]->label)->toBe('Billing')
+        ->and($card->data->addresses[0]->street)->toBe('12 St James Square')
+        ->and($card->data->addresses[0]->city)->toBe('London')
+        ->and($card->data->addresses[0]->postalCode)->toBe('SW1Y 4LB')
+        ->and($card->data->addresses[0]->country)->toBe('United Kingdom');
 
-    expect($card->urls)->toHaveCount(1)
-        ->and($card->urls->first())->toBeInstanceOf(ContactUrl::class)
-        ->and($card->urls->first()->label)->toBe('home page')
-        ->and($card->urls->first()->value)->toBe('https://ada.example.com');
+    expect($card->data->urls)->toHaveCount(1)
+        ->and($card->data->urls[0])->toBeInstanceOf(ContactUrl::class)
+        ->and($card->data->urls[0]->label)->toBe('home page')
+        ->and($card->data->urls[0]->value)->toBe('https://ada.example.com');
 
-    expect($card->instant_messages)->toHaveCount(1)
-        ->and($card->instant_messages->first())->toBeInstanceOf(ContactInstantMessage::class)
-        ->and($card->instant_messages->first()->label)->toBe('Jabber')
-        ->and($card->instant_messages->first()->service)->toBe('xmpp')
-        ->and($card->instant_messages->first()->username)->toBe('ada@jabber.example.com');
+    expect($card->data->instantMessages)->toHaveCount(1)
+        ->and($card->data->instantMessages[0])->toBeInstanceOf(ContactInstantMessage::class)
+        ->and($card->data->instantMessages[0]->label)->toBe('Jabber')
+        ->and($card->data->instantMessages[0]->service)->toBe('xmpp')
+        ->and($card->data->instantMessages[0]->username)->toBe('ada@jabber.example.com');
 
-    expect($card->social_profiles)->toHaveCount(1)
-        ->and($card->social_profiles->first())->toBeInstanceOf(ContactSocialProfile::class)
-        ->and($card->social_profiles->first()->label)->toBe('LinkedIn')
-        ->and($card->social_profiles->first()->service)->toBe('linkedin')
-        ->and($card->social_profiles->first()->url)->toBe('https://www.linkedin.com/in/ada');
+    expect($card->data->socialProfiles)->toHaveCount(1)
+        ->and($card->data->socialProfiles[0])->toBeInstanceOf(ContactSocialProfile::class)
+        ->and($card->data->socialProfiles[0]->label)->toBe('LinkedIn')
+        ->and($card->data->socialProfiles[0]->service)->toBe('linkedin')
+        ->and($card->data->socialProfiles[0]->url)->toBe('https://www.linkedin.com/in/ada');
 
-    expect($card->relations)->toHaveCount(1)
-        ->and($card->relations->first())->toBeInstanceOf(ContactRelation::class)
-        ->and($card->relations->first()->label)->toBe('manager')
-        ->and($card->relations->first()->name)->toBe('Charles Babbage');
+    expect($card->data->relations)->toHaveCount(1)
+        ->and($card->data->relations[0])->toBeInstanceOf(ContactRelation::class)
+        ->and($card->data->relations[0]->label)->toBe('manager')
+        ->and($card->data->relations[0]->name)->toBe('Charles Babbage');
 
-    expect($card->dates)->toHaveCount(1)
-        ->and($card->dates->first()->label)->toBe('anniversary')
-        ->and($card->dates->first()->year)->toBe(1835)
-        ->and($card->dates->first()->month)->toBe(7)
-        ->and($card->dates->first()->day)->toBe(8);
+    expect($card->data->dates)->toHaveCount(1)
+        ->and($card->data->dates[0]->label)->toBe('anniversary')
+        ->and($card->data->dates[0]->year)->toBe(1835)
+        ->and($card->data->dates[0]->month)->toBe(7)
+        ->and($card->data->dates[0]->day)->toBe(8);
 
-    expect($card->vcard_extensions)->toHaveCount(1)
-        ->and($card->vcard_extensions->first())->toBeInstanceOf(ContactVCardExtension::class)
-        ->and($card->vcard_extensions->first()->name)->toBe('X-ALMANAC-CUSTOM')
-        ->and($card->vcard_extensions->first()->value)->toBe('preserve-me');
+    expect($card->data->extensions)->toHaveCount(1)
+        ->and($card->data->extensions[0])->toBeInstanceOf(ContactVCardExtension::class)
+        ->and($card->data->extensions[0]->name)->toBe('X-ALMANAC-CUSTOM')
+        ->and($card->data->extensions[0]->value)->toBe('preserve-me');
 });
 
 it('serializes typed contact value objects into carddav vcard fields', function () {
     $user = User::factory()->create();
     $credential = app(CreateDavCredential::class)->handle($user, 'Phone');
-    $addressBook = DavAddressBook::query()->whereBelongsTo($user, 'user')->where('uri', 'personal')->firstOrFail();
+    $addressBook = DavAddressBook::query()->whereBelongsTo($user, 'owner')->where('uri', 'personal')->firstOrFail();
     $authHeader = cardDavAuthHeader($credential['username'], $credential['plainSecret']);
-    $card = DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'uri' => 'typed-contact.vcf',
+    $card = DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
         'uid' => 'typed-contact',
-        'full_name' => 'Ada Lovelace',
-        'given_name' => 'Ada',
-        'middle_name' => 'Augusta',
-        'family_name' => 'Lovelace',
-        'name_prefix' => 'Countess',
+        'formattedName' => 'Ada Lovelace',
+        'givenName' => 'Ada',
+        'middleName' => 'Augusta',
+        'familyName' => 'Lovelace',
+        'namePrefix' => 'Countess',
         'organization' => 'Analytical Engines',
         'department' => 'Research',
-        'job_title' => 'Mathematician',
-        'contact_type' => 'organization',
+        'jobTitle' => 'Mathematician',
+        'contactType' => 'organization',
         'nickname' => 'Enchantress of Numbers',
         'note' => 'First programmer',
         'birthday' => ['year' => 1815, 'month' => 12, 'day' => 10],
         'pronouns' => [
             ['language' => 'en', 'value' => 'she/her'],
         ],
-        'phone_numbers' => [
-            ['label' => 'iPhone', 'value' => '+1 (555) 010-0', 'types' => ['CELL'], 'is_preferred' => true],
+        'phoneNumbers' => [
+            ['label' => 'iPhone', 'value' => '+1 (555) 010-0', 'types' => ['CELL'], 'isPreferred' => true],
         ],
-        'email_addresses' => [
+        'emailAddresses' => [
             ['label' => 'Personal', 'value' => 'ada@example.com', 'types' => ['INTERNET', 'HOME']],
         ],
         'addresses' => [
-            ['label' => 'Billing', 'street' => '12 St James Square', 'city' => 'London', 'postal_code' => 'SW1Y 4LB', 'country' => 'United Kingdom', 'types' => ['HOME']],
+            ['label' => 'Billing', 'street' => '12 St James Square', 'city' => 'London', 'postalCode' => 'SW1Y 4LB', 'country' => 'United Kingdom', 'types' => ['HOME']],
         ],
         'urls' => [
             ['label' => 'home page', 'value' => 'https://ada.example.com'],
         ],
-        'instant_messages' => [
+        'instantMessages' => [
             ['label' => 'Jabber', 'service' => 'xmpp', 'username' => 'ada@jabber.example.com', 'uri' => 'xmpp:ada@jabber.example.com'],
         ],
-        'social_profiles' => [
+        'socialProfiles' => [
             ['label' => 'LinkedIn', 'service' => 'linkedin', 'url' => 'https://www.linkedin.com/in/ada'],
         ],
         'relations' => [
@@ -268,9 +269,11 @@ it('serializes typed contact value objects into carddav vcard fields', function 
         'dates' => [
             ['label' => 'anniversary', 'year' => 1835, 'month' => 7, 'day' => 8],
         ],
-        'vcard_extensions' => [
+        'extensions' => [
             ['name' => 'X-ALMANAC-CUSTOM', 'value' => 'preserve-me', 'parameters' => []],
         ],
+    ]))->create([
+        'uri' => 'typed-contact.vcf',
     ]);
 
     $payload = $this->withHeaders(['Authorization' => $authHeader])
@@ -303,7 +306,7 @@ it('serializes typed contact value objects into carddav vcard fields', function 
 it('increments the address book change token after card mutations', function () {
     $user = User::factory()->create();
     $credential = app(CreateDavCredential::class)->handle($user, 'Phone');
-    $addressBook = DavAddressBook::query()->whereBelongsTo($user, 'user')->where('uri', 'personal')->firstOrFail();
+    $addressBook = DavAddressBook::query()->whereBelongsTo($user, 'owner')->where('uri', 'personal')->firstOrFail();
     $path = '/dav/addressbooks/'.$user->id.'/personal/contact-1.vcf';
     $authHeader = cardDavAuthHeader($credential['username'], $credential['plainSecret']);
     $originalPayload = cardDavPayload([
@@ -337,10 +340,11 @@ it('does not allow a dav credential to access another users contact cards', func
     $attacker = User::factory()->create();
     app(CreateDavCredential::class)->handle($owner, 'Laptop');
     $attackerCredential = app(CreateDavCredential::class)->handle($attacker, 'Phone');
-    $ownerAddressBook = DavAddressBook::query()->whereBelongsTo($owner, 'user')->where('uri', 'personal')->firstOrFail();
-    $existingCard = DavCard::factory()->for($ownerAddressBook, 'addressBook')->create([
+    $ownerAddressBook = DavAddressBook::query()->whereBelongsTo($owner, 'owner')->where('uri', 'personal')->firstOrFail();
+    $existingCard = DavCard::factory()->for($ownerAddressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Private',
+    ]))->create([
         'uri' => 'contact-1.vcf',
-        'full_name' => 'Private',
     ]);
     $path = '/dav/addressbooks/'.$owner->id.'/personal/contact-1.vcf';
     $authHeader = cardDavAuthHeader($attackerCredential['username'], $attackerCredential['plainSecret']);
@@ -358,6 +362,6 @@ it('does not allow a dav credential to access another users contact cards', func
 
     expect($response->getStatusCode())->toBeIn([403, 404])
         ->and(DavCard::query()->where('dav_address_book_id', $ownerAddressBook->id)->count())->toBe(1)
-        ->and($existingCard->refresh()->full_name)->toBe('Private')
-        ->and(DavCard::query()->where('full_name', 'Overwrite')->exists())->toBeFalse();
+        ->and($existingCard->refresh()->data->formattedName)->toBe('Private')
+        ->and(DavCard::query()->get()->contains(fn (DavCard $card): bool => $card->data->formattedName === 'Overwrite'))->toBeFalse();
 })->with(['GET', 'PUT', 'DELETE']);

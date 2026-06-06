@@ -9,29 +9,54 @@ import { calendar, contacts, dashboard } from '@/wayfinder/routes';
 import { edit as editProfile } from '@/wayfinder/routes/profile';
 import { DEFAULT_EVENT_COLOR } from '@/lib/calendar';
 import { moonPhase } from '@/lib/moon';
-import type { DashboardProps } from '@/types/dashboard';
 import type { Auth } from '@/types';
+import type { UserCalendarEvent } from '@/types/auth';
 
 type PageProps = {
     auth: Auth;
+    dashboard: {
+        now: string;
+        timezone: string;
+        today_start: string;
+        tomorrow_start: string;
+        week_start: string;
+        next_week_start: string;
+    };
 };
 
-function greeting(date: Date): string {
-    const hour = date.getHours();
+function hourInTimezone(date: Date, timezone: string): number {
+    const hour = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        hour12: false,
+        timeZone: timezone,
+    }).formatToParts(date);
+
+    return Number(hour.find((part) => part.type === 'hour')?.value ?? 0);
+}
+
+function greeting(date: Date, timezone: string): string {
+    const hour = hourInTimezone(date, timezone);
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
 }
 
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-});
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-});
+function timeFormatter(timezone: string): Intl.DateTimeFormat {
+    return new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: timezone,
+    });
+}
+
+function dateFormatter(timezone: string): Intl.DateTimeFormat {
+    return new Intl.DateTimeFormat('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        timeZone: timezone,
+    });
+}
 
 const quickLinks = [
     { label: 'Calendar', value: 'Today', href: calendar(), icon: CalendarDays },
@@ -44,16 +69,60 @@ const quickLinks = [
     { label: 'Sync', value: 'DAV', href: editProfile(), icon: FolderSync },
 ];
 
-export default function Dashboard({ todayEvents, stats }: DashboardProps) {
-    const { auth } = usePage<PageProps>().props;
-    const now = new Date();
+function eventStartsBetween(
+    event: UserCalendarEvent,
+    start: Date,
+    end: Date,
+): boolean {
+    if (event.starts_at === null) {
+        return false;
+    }
+
+    const startsAt = new Date(event.starts_at);
+
+    return startsAt >= start && startsAt < end;
+}
+
+export default function Dashboard() {
+    const { auth, dashboard } = usePage<PageProps>().props;
+    const now = new Date(dashboard.now);
+    const timezone = dashboard.timezone;
+    const formatTime = timeFormatter(timezone);
+    const formatDate = dateFormatter(timezone);
     const firstName = auth.user.name.split(' ')[0];
     const moon = moonPhase(now);
+    const calendarInstances = auth.user.calendar_instances ?? [];
+    const addressBooks = auth.user.address_books ?? [];
+    const events = calendarInstances.flatMap((calendar) => calendar.events);
+    const todayStart = new Date(dashboard.today_start);
+    const tomorrowStart = new Date(dashboard.tomorrow_start);
+    const weekStart = new Date(dashboard.week_start);
+    const nextWeekStart = new Date(dashboard.next_week_start);
+    const todayEvents = events
+        .filter((event) => eventStartsBetween(event, todayStart, tomorrowStart))
+        .sort((a, b) => {
+            if (a.starts_at === null || b.starts_at === null) {
+                return 0;
+            }
+
+            return (
+                new Date(a.starts_at).getTime() -
+                new Date(b.starts_at).getTime()
+            );
+        })
+        .slice(0, 8);
+    const weekEventCount = events.filter((event) =>
+        eventStartsBetween(event, weekStart, nextWeekStart),
+    ).length;
+    const contactCount = addressBooks.reduce(
+        (count, addressBook) => count + addressBook.cards_count,
+        0,
+    );
 
     const statCards = [
-        { label: 'Today’s events', value: stats.todayEventCount },
-        { label: 'This week', value: stats.weekEventCount },
-        { label: 'Contacts', value: stats.contactCount },
+        { label: 'Today’s events', value: todayEvents.length },
+        { label: 'This week', value: weekEventCount },
+        { label: 'Contacts', value: contactCount },
     ];
 
     return (
@@ -64,10 +133,10 @@ export default function Dashboard({ todayEvents, stats }: DashboardProps) {
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <p className="almanac-kicker">
-                            {dateFormatter.format(now)}
+                            {formatDate.format(now)}
                         </p>
                         <h1 className="mt-2 font-serif text-3xl font-medium tracking-tight">
-                            {greeting(now)}, {firstName}
+                            {greeting(now, timezone)}, {firstName}
                         </h1>
                     </div>
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -119,11 +188,13 @@ export default function Dashboard({ todayEvents, stats }: DashboardProps) {
                                     className="grid grid-cols-[64px_1fr] items-center gap-4 py-3"
                                 >
                                     <span className="text-sm font-semibold tabular-nums text-primary">
-                                        {event.all_day
+                                        {event.is_all_day
                                             ? 'All day'
-                                            : timeFormatter.format(
-                                                  new Date(event.starts_at),
-                                              )}
+                                            : event.starts_at === null
+                                              ? ''
+                                              : formatTime.format(
+                                                    new Date(event.starts_at),
+                                                )}
                                     </span>
                                     <span className="flex items-center gap-3">
                                         <span
@@ -136,11 +207,12 @@ export default function Dashboard({ todayEvents, stats }: DashboardProps) {
                                             aria-hidden
                                         />
                                         <span className="text-sm font-medium">
-                                            {event.summary ?? 'Untitled event'}
+                                            {event.data.summary ??
+                                                'Untitled event'}
                                         </span>
-                                        {event.location && (
+                                        {event.data.location && (
                                             <span className="text-xs text-muted-foreground">
-                                                · {event.location}
+                                                · {event.data.location}
                                             </span>
                                         )}
                                     </span>

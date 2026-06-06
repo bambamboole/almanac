@@ -22,7 +22,10 @@ class UserManagementController extends Controller
             'users' => new UserCollection(
                 User::query()
                     ->with('role:id,name,permissions')
-                    ->withCount('calendars', 'addressBooks')
+                    ->withCount([
+                        'davCalendars as calendars_count',
+                        'davAddressBooks as address_books_count',
+                    ])
                     ->orderBy('name')
                     ->get()
             ),

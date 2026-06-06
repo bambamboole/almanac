@@ -15,12 +15,13 @@ class DavCalendarPolicy
 
     public function view(User $user, DavCalendar $calendar): bool
     {
-        return $this->update($user, $calendar);
+        return $user->hasPermission(Permission::CollectionsManage)
+            || $calendar->instanceFor($user) !== null;
     }
 
     public function update(User $user, DavCalendar $calendar): bool
     {
-        return $calendar->user_id === $user->id
+        return $calendar->owner_id === $user->id
             || $user->hasPermission(Permission::CollectionsManage);
     }
 

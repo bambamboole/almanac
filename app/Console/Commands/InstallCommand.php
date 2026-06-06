@@ -349,6 +349,13 @@ class InstallCommand extends Command
 
     private function davServerUrl(): string
     {
-        return rtrim((string) config('app.url'), '/').rtrim((string) config('dav.base_uri'), '/').'/';
+        $baseUri = config('dav.base_uri');
+
+        if (! is_string($baseUri) || $baseUri === '') {
+            $prefix = trim((string) config('dav.route.prefix', 'dav'), '/');
+            $baseUri = $prefix === '' ? '/' : "/{$prefix}/";
+        }
+
+        return rtrim(rtrim((string) config('app.url'), '/').'/'.trim($baseUri, '/'), '/').'/';
     }
 }

@@ -1,5 +1,6 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import { CalendarDays, KeyRound, Trash2 } from 'lucide-react';
+import type { Inertia } from '@/wayfinder/types';
 import DavCredentialController from '@/wayfinder/App/Http/Controllers/Settings/DavCredentialController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -10,23 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/wayfinder/routes/settings/dav';
 
-type DavCredential = {
-    id: number;
-    name: string;
-    username: string;
-    created_at_diff: string;
-    last_used_at_diff: string | null;
-};
-
 type CreatedDavCredential = {
     username: string;
     plainSecret: string;
 };
 
-type Props = {
-    credentials: DavCredential[];
-    davUrl: string;
-};
+type Props = Pick<Inertia.Pages.Settings.Dav, 'credentials' | 'davUrl'>;
 
 export default function Dav({ credentials, davUrl }: Props) {
     const { flash } = usePage();

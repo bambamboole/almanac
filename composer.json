@@ -13,11 +13,12 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "bambamboole/laravel-dav": "^0.1.1",
+        "bambamboole/laravel-dav": "^0.2.0",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/chisel": "^0.1.0",
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.7",
+        "laravel/octane": "^2.17",
         "laravel/reverb": "^1.0",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "dev-next"
@@ -97,9 +98,6 @@
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@php artisan boost:update --ansi"
-        ],
-        "post-install-cmd": [
             "@php artisan boost:update --ansi"
         ],
         "post-create-project-cmd": [

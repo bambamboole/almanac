@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Calendar;
 
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,16 +21,19 @@ class StoreCalendarEventRequest extends FormRequest
         return [
             'calendar_id' => [
                 'required',
-                Rule::exists('dav_calendars', 'id')->where('user_id', $this->user()->id),
+                Rule::exists('dav_calendar_instances', 'dav_calendar_id')
+                    ->where('owner_id', $this->user()->id)
+                    ->whereIn('access', DavCalendarInstance::writeAccessLevels()),
             ],
-            'summary' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'starts_at' => ['required', 'date'],
-            'ends_at' => ['required', 'date', 'after_or_equal:starts_at'],
-            'is_all_day' => ['sometimes', 'boolean'],
-            'status' => ['nullable', 'string', 'max:64'],
-            'url' => ['nullable', 'string', 'url', 'max:2048'],
+            'data' => ['required', 'array'],
+            'data.summary' => ['required', 'string', 'max:255'],
+            'data.description' => ['nullable', 'string'],
+            'data.location' => ['nullable', 'string', 'max:255'],
+            'data.startsAt' => ['required', 'date'],
+            'data.endsAt' => ['required', 'date', 'after_or_equal:data.startsAt'],
+            'data.isAllDay' => ['sometimes', 'boolean'],
+            'data.status' => ['nullable', 'string', 'max:64'],
+            'data.url' => ['nullable', 'string', 'url', 'max:2048'],
         ];
     }
 }

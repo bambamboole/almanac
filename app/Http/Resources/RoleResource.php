@@ -16,8 +16,6 @@ class RoleResource extends JsonResource
 
     /**
      * @return array{id: int, name: string, permissions: array<int, string>}
-     *
-     * Transform the resource into an array.
      */
     public function toArray(Request $request): array
     {

@@ -2,7 +2,7 @@
 
 use App\Actions\Dav\CreateDavCredential;
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Illuminate\Support\Carbon;
 
@@ -15,12 +15,13 @@ it('stores fetches and deletes calendar objects through caldav', function () {
 
     calDavPut($this, $path, $authHeader, $payload)->assertSuccessful();
 
-    expect(DavCalendarObject::query()->where('uri', 'event-1.ics')->first())
-        ->not->toBeNull()
-        ->summary->toBe('Deep Work')
-        ->uid->toBe('event-1')
-        ->component_type->toBe('VEVENT')
-        ->calendar_data->toBe($payload);
+    $object = DavCalendarObject::query()->where('uri', 'event-1.ics')->first();
+
+    expect($object)->not->toBeNull()
+        ->and($object->data->summary)->toBe('Deep Work')
+        ->and($object->uid)->toBe('event-1')
+        ->and($object->component_type)->toBe('VEVENT')
+        ->and($object->calendar_data)->toBe($payload);
 
     $this->withHeaders(['Authorization' => $authHeader])
         ->get($path)
@@ -73,8 +74,8 @@ it('updates existing calendar objects through caldav', function () {
         $object->refresh();
 
         expect(DavCalendarObject::query()->where('uri', 'event-1.ics')->count())->toBe(1)
-            ->and($object->summary)->toBe('Planning')
-            ->and($object->location)->toBe('Office')
+            ->and($object->data->summary)->toBe('Planning')
+            ->and($object->data->location)->toBe('Office')
             ->and($object->starts_at?->toIso8601String())->toBe('2026-06-03T09:00:00+00:00')
             ->and($object->ends_at?->toIso8601String())->toBe('2026-06-03T10:00:00+00:00')
             ->and($object->etag)->toBe(sha1($updatedPayload))
@@ -94,11 +95,14 @@ it('does not allow a dav credential to access another users calendar objects', f
     $attacker = User::factory()->create();
     app(CreateDavCredential::class)->handle($owner, 'Laptop');
     $attackerCredential = app(CreateDavCredential::class)->handle($attacker, 'Phone');
-    $ownerCalendar = DavCalendar::query()->whereBelongsTo($owner, 'user')->where('uri', 'personal')->firstOrFail();
-    $existingObject = DavCalendarObject::factory()->for($ownerCalendar, 'calendar')->create([
-        'uri' => 'event-1.ics',
-        'summary' => 'Private',
-    ]);
+    $ownerCalendar = DavCalendarInstance::query()
+        ->where('owner_id', $owner->id)
+        ->where('uri', 'personal')
+        ->firstOrFail()
+        ->calendar;
+    $existingObject = DavCalendarObject::factory()->for($ownerCalendar, 'calendar')
+        ->state(davData(['summary' => 'Private']))
+        ->create(['uri' => 'event-1.ics']);
     $path = '/dav/calendars/'.$owner->id.'/personal/event-1.ics';
     $authHeader = calDavAuthHeader($attackerCredential['username'], $attackerCredential['plainSecret']);
     $payload = calDavPayload('VEVENT', [
@@ -117,6 +121,5 @@ it('does not allow a dav credential to access another users calendar objects', f
 
     expect($response->getStatusCode())->toBeIn([403, 404])
         ->and(DavCalendarObject::query()->where('dav_calendar_id', $ownerCalendar->id)->count())->toBe(1)
-        ->and($existingObject->refresh()->summary)->toBe('Private')
-        ->and(DavCalendarObject::query()->where('summary', 'Overwrite')->exists())->toBeFalse();
+        ->and($existingObject->refresh()->data->summary)->toBe('Private');
 })->with(['GET', 'PUT', 'DELETE']);

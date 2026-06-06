@@ -38,3 +38,7 @@ AGENTS.md
 CLAUDE.md
 docs/superpowers
 .superpowers
+storage/wayfinder-cache
+
+**/caddy
+/frankenphp

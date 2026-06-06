@@ -20,14 +20,14 @@ class CalendarEventController extends Controller
     {
         $calendar = DavCalendar::query()->findOrFail($request->integer('calendar_id'));
 
-        $action->handle($calendar, $request->safe()->except('calendar_id'));
+        $action->handle($calendar, $request->validated('data'));
 
         return Inertia::flash('toast', ['type' => 'success', 'message' => __('Event created.')])->back();
     }
 
     public function update(UpdateCalendarEventRequest $request, DavCalendarObject $event, UpdateCalendarObject $action): RedirectResponse
     {
-        $action->handle($event, $request->safe()->except('expected_etag'), $request->string('expected_etag')->value());
+        $action->handle($event, $request->validated('data'), $request->string('expected_etag')->value());
 
         return Inertia::flash('toast', ['type' => 'success', 'message' => __('Event updated.')])->back();
     }

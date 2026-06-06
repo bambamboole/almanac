@@ -9,7 +9,7 @@ class UpdateCalendarRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('calendar'));
+        return $this->user()->can('update', $this->route('calendarInstance'));
     }
 
     /**
@@ -22,7 +22,7 @@ class UpdateCalendarRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'color' => ['nullable', 'string', 'max:9'],
             'timezone' => ['nullable', 'string', 'max:64'],
-            'components' => ['required', 'array', 'min:1'],
+            'components' => ['sometimes', 'array', 'min:1'],
             'components.*' => [Rule::in(['VEVENT', 'VTODO', 'VJOURNAL'])],
         ];
     }

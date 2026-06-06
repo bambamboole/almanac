@@ -48,7 +48,6 @@ import type { Calendar, CalendarEvent, CalendarWindow } from '@/types/calendar';
 
 type Props = {
     calendars: Calendar[];
-    events: CalendarEvent[];
     window: CalendarWindow;
 };
 
@@ -75,13 +74,19 @@ type DavChangedPayload = {
 };
 
 function eventDayKeys(event: CalendarEvent): string[] {
-    if (!event.all_day) {
-        return [event.starts_on];
+    if (!event.starts_at || !event.ends_at) {
+        return [];
+    }
+
+    const startsOn = event.starts_at.slice(0, 10);
+
+    if (!event.is_all_day) {
+        return [startsOn];
     }
 
     const keys: string[] = [];
-    const current = new Date(`${event.starts_on}T00:00:00Z`);
-    const end = new Date(`${event.ends_on}T00:00:00Z`);
+    const current = new Date(`${startsOn}T00:00:00Z`);
+    const end = new Date(`${event.ends_at.slice(0, 10)}T00:00:00Z`);
 
     while (current < end) {
         keys.push(current.toISOString().slice(0, 10));
@@ -109,7 +114,7 @@ const fullCalendarTheme = {
     '--fc-small-font-size': '0.75rem',
 } as CSSProperties;
 
-export default function CalendarIndex({ calendars, events }: Props) {
+export default function CalendarIndex({ calendars }: Props) {
     const userId = usePage().props.auth.user.id;
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(
         null,
@@ -136,12 +141,16 @@ export default function CalendarIndex({ calendars, events }: Props) {
         '.dav.changed',
         (e) => {
             if (e.type === 'calendar') {
-                router.reload({ only: ['events'] });
+                router.reload({ only: ['calendars'] });
             }
         },
         [userId],
         'private',
     );
+
+    const events = useMemo(() => {
+        return calendars.flatMap((calendar) => calendar.events);
+    }, [calendars]);
 
     const eventsById = useMemo(() => {
         return new Map(events.map((event) => [String(event.id), event]));
@@ -151,23 +160,37 @@ export default function CalendarIndex({ calendars, events }: Props) {
         return new Set(events.flatMap((event) => eventDayKeys(event)));
     }, [events]);
 
+    const writableCalendars = useMemo(() => {
+        return calendars.filter((calendar) => calendar.can_write);
+    }, [calendars]);
+
     const calendarEvents = useMemo<EventInput[]>(() => {
-        return events.map((event) => {
+        return events.flatMap((event) => {
+            if (!event.starts_at || !event.ends_at) {
+                return [];
+            }
+
             const color = event.calendar.color ?? DEFAULT_EVENT_COLOR;
 
-            return {
-                id: String(event.id),
-                title: event.summary ?? 'Untitled event',
-                start: event.all_day ? event.starts_on : event.starts_at,
-                end: event.all_day ? event.ends_on : event.ends_at,
-                allDay: event.all_day,
-                backgroundColor: color,
-                borderColor: color,
-                extendedProps: {
-                    calendarEvent: event,
-                    calendarName: event.calendar.name,
+            return [
+                {
+                    id: String(event.id),
+                    title: event.data.summary ?? 'Untitled event',
+                    start: event.is_all_day
+                        ? event.starts_at.slice(0, 10)
+                        : event.starts_at,
+                    end: event.is_all_day
+                        ? event.ends_at.slice(0, 10)
+                        : event.ends_at,
+                    allDay: event.is_all_day,
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: {
+                        calendarEvent: event,
+                        calendarName: event.calendar.display_name,
+                    },
                 },
-            };
+            ];
         });
     }, [events]);
 
@@ -177,7 +200,7 @@ export default function CalendarIndex({ calendars, events }: Props) {
 
             const event = eventsById.get(click.event.id);
 
-            if (event) {
+            if (event?.calendar.can_write) {
                 setEditingEvent(event);
             }
         },
@@ -238,7 +261,7 @@ export default function CalendarIndex({ calendars, events }: Props) {
 
             {creatingEvent && (
                 <CreateEventDialog
-                    calendars={calendars}
+                    calendars={writableCalendars}
                     open={creatingEvent}
                     defaults={createEventDefaults}
                     onClose={() => setCreatingEvent(false)}
@@ -277,7 +300,10 @@ export default function CalendarIndex({ calendars, events }: Props) {
                     />
 
                     <div className="flex items-center gap-2">
-                        <Button onClick={() => openCreateDialog(undefined)}>
+                        <Button
+                            onClick={() => openCreateDialog(undefined)}
+                            disabled={writableCalendars.length === 0}
+                        >
                             <Plus className="size-4" />
                             New event
                         </Button>
@@ -327,7 +353,7 @@ export default function CalendarIndex({ calendars, events }: Props) {
                                         <CalendarSwatch color={cal.color} />
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-medium">
-                                                {cal.name}
+                                                {cal.display_name}
                                             </p>
                                             {cal.timezone && (
                                                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -342,7 +368,7 @@ export default function CalendarIndex({ calendars, events }: Props) {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="size-7 shrink-0"
-                                                    aria-label={`${cal.name} actions`}
+                                                    aria-label={`${cal.display_name} actions`}
                                                     data-calendar-actions={
                                                         cal.id
                                                     }
@@ -384,7 +410,9 @@ export default function CalendarIndex({ calendars, events }: Props) {
                                                     }
                                                 >
                                                     <Trash2 className="size-4" />
-                                                    Delete
+                                                    {cal.is_owner
+                                                        ? 'Delete'
+                                                        : 'Remove'}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

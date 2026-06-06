@@ -1,12 +1,12 @@
 <?php
 
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
 it('creates an event from the calendar UI', function () {
     $user = User::factory()->create();
-    DavCalendar::factory()->for($user)->create(['display_name' => 'Personal']);
+    davCalendarFor($user, ['display_name' => 'Personal']);
 
     $this->actingAs($user);
     $page = visit('/calendar');
@@ -19,18 +19,18 @@ it('creates an event from the calendar UI', function () {
         ->click('Create event')
         ->assertSee('Dentist');
 
-    expect(DavCalendarObject::query()->where('summary', 'Dentist')->exists())->toBeTrue();
+    expect(DavCalendarObject::query()->get()->contains(fn ($object): bool => $object->data->summary === 'Dentist'))->toBeTrue();
 });
 
 it('preserves the dragged time range when creating an event', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Personal']);
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+    $calendar = davCalendarFor($user, ['display_name' => 'Personal']);
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData([
         'summary' => 'Existing appointment',
-        'starts_at' => today()->setTime(8, 0),
-        'ends_at' => today()->setTime(9, 0),
-        'is_all_day' => false,
-    ]);
+        'startsAt' => today()->setTime(8, 0),
+        'endsAt' => today()->setTime(9, 0),
+        'isAllDay' => false,
+    ]))->create();
 
     $this->actingAs($user);
     $page = visit('/calendar');
@@ -66,5 +66,5 @@ it('creates a calendar from the calendar UI', function () {
         ->click('Create calendar')
         ->assertSee('Side Projects');
 
-    expect(DavCalendar::query()->where('user_id', $user->id)->where('display_name', 'Side Projects')->exists())->toBeTrue();
+    expect(DavCalendarInstance::query()->where('owner_id', $user->id)->where('display_name', 'Side Projects')->exists())->toBeTrue();
 });

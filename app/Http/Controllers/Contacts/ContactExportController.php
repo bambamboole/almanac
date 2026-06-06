@@ -11,12 +11,9 @@ use Illuminate\Support\Str;
 
 class ContactExportController extends Controller
 {
-    /**
-     * Stream the current user's contacts as a single concatenated .vcf download.
-     */
     public function __invoke(Request $request): Response
     {
-        return $this->responseFor($request->user()->addressBooks()->with('cards')->get()->all(), 'contacts.vcf');
+        return $this->responseFor($request->user()->davAddressBooks()->with('cards')->get()->all(), 'contacts.vcf');
     }
 
     public function show(Request $request, DavAddressBook $addressBook): Response
@@ -60,7 +57,8 @@ class ContactExportController extends Controller
 
     private function filenameFor(DavCard $contact): string
     {
-        $name = filled($contact->full_name) ? $contact->full_name : ($contact->uid ?? 'contact');
+        $data = $contact->data;
+        $name = filled($data->formattedName) ? $data->formattedName : ($data->uid ?? 'contact');
 
         return Str::slug($name).'.vcf';
     }

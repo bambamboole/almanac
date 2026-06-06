@@ -2,15 +2,15 @@
 
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavCard;
 
-it('captures dashboard, calendar and contacts screenshots', function () {
+function seedScreenshotWorkspace(): User
+{
     $user = User::factory()->create(['name' => 'Robin Ellery']);
 
-    $personal = DavCalendar::factory()->for($user)->create(['display_name' => 'Personal', 'color' => '#4F6043']);
-    $work = DavCalendar::factory()->for($user)->create(['display_name' => 'Work', 'color' => '#A8843F']);
+    $personal = davCalendarFor($user, ['display_name' => 'Personal', 'color' => '#4F6043']);
+    $work = davCalendarFor($user, ['display_name' => 'Work', 'color' => '#A8843F']);
 
     $today = today();
     $todayEvents = [
@@ -20,13 +20,13 @@ it('captures dashboard, calendar and contacts screenshots', function () {
         [$work, 'Sync retro', 16, 0, 16, 30],
     ];
     foreach ($todayEvents as [$cal, $summary, $sh, $sm, $eh, $em]) {
-        DavCalendarObject::factory()->for($cal, 'calendar')->create([
-            'component_type' => 'VEVENT',
+        DavCalendarObject::factory()->for($cal, 'calendar')->state(davData([
+            'componentType' => 'VEVENT',
             'summary' => $summary,
-            'starts_at' => $today->copy()->setTime($sh, $sm),
-            'ends_at' => $today->copy()->setTime($eh, $em),
-            'is_all_day' => false,
-        ]);
+            'startsAt' => $today->copy()->setTime($sh, $sm),
+            'endsAt' => $today->copy()->setTime($eh, $em),
+            'isAllDay' => false,
+        ]))->create();
     }
 
     $spread = [
@@ -36,16 +36,16 @@ it('captures dashboard, calendar and contacts screenshots', function () {
     foreach ($spread as $i => [$offset, $summary]) {
         $cal = $i % 2 === 0 ? $personal : $work;
         $day = $today->copy()->addDays($offset);
-        DavCalendarObject::factory()->for($cal, 'calendar')->create([
-            'component_type' => 'VEVENT',
+        DavCalendarObject::factory()->for($cal, 'calendar')->state(davData([
+            'componentType' => 'VEVENT',
             'summary' => $summary,
-            'starts_at' => $day->copy()->setTime(10, 0),
-            'ends_at' => $day->copy()->setTime(11, 0),
-            'is_all_day' => false,
-        ]);
+            'startsAt' => $day->copy()->setTime(10, 0),
+            'endsAt' => $day->copy()->setTime(11, 0),
+            'isAllDay' => false,
+        ]))->create();
     }
 
-    $book = DavAddressBook::factory()->for($user)->create(['display_name' => 'People']);
+    $book = DavAddressBook::factory()->for($user, 'owner')->create(['display_name' => 'People']);
     $people = [
         ['Ada Lovelace', 'Analytical Engines', 'ada@example.com'],
         ['Alan Turing', 'Bletchley Park', 'alan@example.com'],
@@ -57,25 +57,39 @@ it('captures dashboard, calendar and contacts screenshots', function () {
         ['Barbara Liskov', 'MIT', 'barbara@example.com'],
     ];
     foreach ($people as [$name, $org, $email]) {
-        DavCard::factory()->for($book, 'addressBook')->create([
-            'full_name' => $name,
+        DavCard::factory()->for($book, 'addressBook')->state(davData([
+            'formattedName' => $name,
             'organization' => $org,
-            'emails' => [$email],
-        ]);
+            'emailAddresses' => [
+                ['label' => 'work', 'value' => $email, 'types' => ['INTERNET', 'WORK']],
+            ],
+        ]))->create();
     }
 
-    $this->actingAs($user);
+    return $user;
+}
+
+it('captures a dashboard screenshot', function () {
+    $this->actingAs(seedScreenshotWorkspace());
 
     visit('/dashboard')
         ->resize(1440, 900)
         ->assertSee('Robin')
         ->screenshot(true, 'almanac-dashboard');
+});
+
+it('captures a calendar screenshot', function () {
+    $this->actingAs(seedScreenshotWorkspace());
 
     visit('/calendar')
         ->resize(1440, 900)
         ->assertSee('Calendar')
         ->assertSee('Morning planning')
         ->screenshot(true, 'almanac-calendar');
+});
+
+it('captures a contacts screenshot', function () {
+    $this->actingAs(seedScreenshotWorkspace());
 
     visit('/contacts')
         ->resize(1440, 900)

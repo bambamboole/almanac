@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Calendar;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Calendar\StoreCalendarRequest;
 use App\Http\Requests\Calendar\UpdateCalendarRequest;
-use Bambamboole\LaravelDav\Models\DavCalendar;
-use Bambamboole\LaravelDav\Parsing\CollectionUri;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class CalendarManagementController extends Controller
@@ -16,9 +16,8 @@ class CalendarManagementController extends Controller
     {
         $data = $request->validated();
 
-        DavCalendar::query()->create([
-            'user_id' => $request->user()->id,
-            'uri' => CollectionUri::fromDisplayName($data['display_name']),
+        $request->user()->createDavCalendar([
+            'uri' => Str::slug($data['display_name']) ?: (string) Str::uuid(),
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,
             'color' => $data['color'] ?? null,
@@ -32,30 +31,39 @@ class CalendarManagementController extends Controller
         return back();
     }
 
-    public function update(UpdateCalendarRequest $request, DavCalendar $calendar): RedirectResponse
+    public function update(UpdateCalendarRequest $request, DavCalendarInstance $calendarInstance): RedirectResponse
     {
         $data = $request->validated();
 
-        $calendar->update([
+        $attributes = [
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,
             'color' => $data['color'] ?? null,
             'timezone' => $data['timezone'] ?? null,
-            'components' => $this->normalizeComponents($data['components']),
-        ]);
+        ];
+
+        if ($request->user()->can('updateBackingCalendar', $calendarInstance) && array_key_exists('components', $data)) {
+            $attributes['components'] = $this->normalizeComponents($data['components']);
+        }
+
+        $calendarInstance->updateDavProperties($attributes);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Calendar updated.')]);
 
         return back();
     }
 
-    public function destroy(DavCalendar $calendar): RedirectResponse
+    public function destroy(DavCalendarInstance $calendarInstance): RedirectResponse
     {
-        $this->authorize('delete', $calendar);
+        $this->authorize('delete', $calendarInstance);
 
-        $calendar->delete();
+        $message = $calendarInstance->isOwner()
+            ? __('Calendar deleted.')
+            : __('Calendar removed.');
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Calendar deleted.')]);
+        $calendarInstance->deleteDavCollection();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
 
         return back();
     }

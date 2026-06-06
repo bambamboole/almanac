@@ -6,6 +6,7 @@ use App\Actions\Dav\CreateDavCredential;
 use App\Actions\Dav\RevokeDavCredential;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\CreateDavCredentialRequest;
+use App\Http\Resources\DavCredentialCollection;
 use Bambamboole\LaravelDav\Models\DavCredential;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,22 +20,15 @@ class DavCredentialController extends Controller
      */
     public function index(Request $request): Response
     {
+        $credentials = DavCredential::query()
+            ->where('owner_id', $request->user()->id)
+            ->select(['id', 'name', 'username', 'created_at', 'last_used_at'])
+            ->latest()
+            ->get();
+
         return Inertia::render('settings/dav', [
-            'credentials' => DavCredential::query()
-                ->whereBelongsTo($request->user())
-                ->select(['id', 'name', 'username', 'created_at', 'last_used_at'])
-                ->latest()
-                ->get()
-                ->map(fn (DavCredential $credential): array => [
-                    'id' => $credential->id,
-                    'name' => $credential->name,
-                    'username' => $credential->username,
-                    'created_at_diff' => $credential->created_at->diffForHumans(),
-                    'last_used_at_diff' => $credential->last_used_at?->diffForHumans(),
-                ])
-                ->values()
-                ->all(),
-            'davUrl' => url('/dav/'),
+            'credentials' => new DavCredentialCollection($credentials),
+            'davUrl' => (string) url('/dav/'),
         ]);
     }
 
@@ -61,7 +55,7 @@ class DavCredentialController extends Controller
      */
     public function destroy(Request $request, DavCredential $credential, RevokeDavCredential $revoke): RedirectResponse
     {
-        abort_unless($credential->user_id === $request->user()->id, 404);
+        abort_unless($credential->owner_id === $request->user()->id, 404);
 
         $revoke->handle($credential);
 

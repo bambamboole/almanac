@@ -36,6 +36,11 @@ import { Input } from '@/components/ui/input';
 import { exportMethod as exportContacts } from '@/wayfinder/routes/contacts';
 import { exportMethod as exportSingleAddressBook } from '@/wayfinder/routes/contacts/address-books';
 import { exportMethod as exportContact } from '@/wayfinder/routes/contacts/cards';
+import {
+    contactDisplayName,
+    contactPrimaryEmail,
+    contactPrimaryPhone,
+} from '@/components/contacts/contact-form';
 import type { Contact, ContactAddressBook } from '@/types/contacts';
 
 type Props = {
@@ -52,7 +57,7 @@ type DavChangedPayload = {
 };
 
 function initialsFor(contact: Contact): string {
-    const name = contact.display_name.trim();
+    const name = contactDisplayName(contact).trim();
     const parts = name.split(/\s+/).filter(Boolean);
 
     if (parts.length >= 2) {
@@ -63,21 +68,20 @@ function initialsFor(contact: Contact): string {
 }
 
 function contactMatchesQuery(contact: Contact, query: string): boolean {
+    const data = contact.data;
     const haystack = [
-        contact.display_name,
-        contact.organization,
-        contact.primary_email,
-        contact.primary_phone,
-        contact.address_book.name,
-        ...contact.emails,
-        ...contact.phones,
-        ...contact.email_addresses.map((email) => email.value),
-        ...contact.phone_numbers.map((phone) => phone.value),
-        ...contact.addresses.flatMap((address) => [
+        contactDisplayName(contact),
+        data.organization,
+        contactPrimaryEmail(contact),
+        contactPrimaryPhone(contact),
+        contact.address_book.display_name,
+        ...data.emailAddresses.map((email) => email.value),
+        ...data.phoneNumbers.map((phone) => phone.value),
+        ...data.addresses.flatMap((address) => [
             address.street,
             address.city,
             address.region,
-            address.postal_code,
+            address.postalCode,
             address.country,
         ]),
     ]
@@ -123,7 +127,7 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
         return contacts.filter((contact) => {
             const matchesAddressBook =
                 selectedAddressBookId === null ||
-                contact.address_book_id === selectedAddressBookId;
+                contact.address_book.id === selectedAddressBookId;
             const matchesQuery =
                 normalizedQuery.length === 0 ||
                 contactMatchesQuery(contact, normalizedQuery);
@@ -304,7 +308,7 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
                                             <ContactRound className="size-4 shrink-0" />
                                             <span className="min-w-0 text-left">
                                                 <span className="block truncate">
-                                                    {addressBook.name}
+                                                    {addressBook.display_name}
                                                 </span>
                                                 {addressBook.description && (
                                                     <span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">
@@ -316,7 +320,7 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
                                             </span>
                                         </span>
                                         <Badge variant="outline">
-                                            {addressBook.contacts_count}
+                                            {addressBook.cards_count}
                                         </Badge>
                                     </Button>
 
@@ -327,7 +331,7 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="mt-1 size-7 shrink-0"
-                                                aria-label={`${addressBook.name} actions`}
+                                                aria-label={`${addressBook.display_name} actions`}
                                                 data-address-book-actions={
                                                     addressBook.id
                                                 }
@@ -388,7 +392,7 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
                         <div className="flex flex-col gap-1 border-b border-border/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="min-w-0">
                                 <h2 className="truncate text-sm font-semibold">
-                                    {selectedAddressBook?.name ??
+                                    {selectedAddressBook?.display_name ??
                                         'All contacts'}
                                 </h2>
                                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -447,19 +451,20 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
                                                 <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                                     <div className="min-w-0">
                                                         <h3 className="min-w-0 text-sm font-medium break-words">
-                                                            {
-                                                                contact.display_name
-                                                            }
+                                                            {contactDisplayName(
+                                                                contact,
+                                                            )}
                                                         </h3>
                                                         <p className="mt-1 truncate text-xs text-muted-foreground">
                                                             {
                                                                 contact
                                                                     .address_book
-                                                                    .name
+                                                                    .display_name
                                                             }
                                                         </p>
                                                     </div>
-                                                    {contact.organization && (
+                                                    {contact.data
+                                                        .organization && (
                                                         <Badge
                                                             variant="secondary"
                                                             className="w-fit max-w-full justify-start gap-1.5"
@@ -467,7 +472,8 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
                                                             <Building2 className="size-3" />
                                                             <span className="truncate">
                                                                 {
-                                                                    contact.organization
+                                                                    contact.data
+                                                                        .organization
                                                                 }
                                                             </span>
                                                         </Badge>
@@ -475,23 +481,27 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
                                                 </div>
 
                                                 <div className="mt-3 grid min-w-0 gap-2 text-sm text-muted-foreground md:grid-cols-2">
-                                                    {contact.primary_email && (
+                                                    {contactPrimaryEmail(
+                                                        contact,
+                                                    ) && (
                                                         <p className="flex min-w-0 items-center gap-2">
                                                             <Mail className="size-4 shrink-0" />
                                                             <span className="min-w-0 truncate">
-                                                                {
-                                                                    contact.primary_email
-                                                                }
+                                                                {contactPrimaryEmail(
+                                                                    contact,
+                                                                )}
                                                             </span>
                                                         </p>
                                                     )}
-                                                    {contact.primary_phone && (
+                                                    {contactPrimaryPhone(
+                                                        contact,
+                                                    ) && (
                                                         <p className="flex min-w-0 items-center gap-2">
                                                             <Phone className="size-4 shrink-0" />
                                                             <span className="min-w-0 truncate">
-                                                                {
-                                                                    contact.primary_phone
-                                                                }
+                                                                {contactPrimaryPhone(
+                                                                    contact,
+                                                                )}
                                                             </span>
                                                         </p>
                                                     )}
@@ -507,7 +517,7 @@ export default function ContactsIndex({ addressBooks, contacts }: Props) {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="size-7 shrink-0"
-                                                        aria-label={`${contact.display_name} actions`}
+                                                        aria-label={`${contactDisplayName(contact)} actions`}
                                                         data-contact-actions={
                                                             contact.id
                                                         }

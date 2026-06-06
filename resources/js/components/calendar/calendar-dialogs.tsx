@@ -225,7 +225,7 @@ export function EditCalendarDialog({
     onClose: () => void;
 }) {
     const form = useForm<EditCalendarFormData>({
-        display_name: calendar.name,
+        display_name: calendar.display_name,
         description: calendar.description ?? '',
         color: calendar.color ?? '',
         timezone: calendar.timezone ?? '',
@@ -247,7 +247,7 @@ export function EditCalendarDialog({
             preserveScroll: true,
             onSuccess: () => {
                 onClose();
-                router.reload({ only: ['calendars', 'events'] });
+                router.reload({ only: ['calendars'] });
             },
         });
     }
@@ -328,29 +328,31 @@ export function EditCalendarDialog({
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                        {optionalCalendarComponents.map((component) => (
-                            <label
-                                key={component.value}
-                                className="flex items-center gap-2 text-sm"
-                            >
-                                <input
-                                    type="checkbox"
-                                    aria-label={component.label}
-                                    checked={form.data.components.includes(
-                                        component.value,
-                                    )}
-                                    onChange={(e) =>
-                                        toggleComponent(
+                    {calendar.is_owner && (
+                        <div className="flex flex-col gap-2">
+                            {optionalCalendarComponents.map((component) => (
+                                <label
+                                    key={component.value}
+                                    className="flex items-center gap-2 text-sm"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        aria-label={component.label}
+                                        checked={form.data.components.includes(
                                             component.value,
-                                            e.target.checked,
-                                        )
-                                    }
-                                />
-                                {component.label}
-                            </label>
-                        ))}
-                    </div>
+                                        )}
+                                        onChange={(e) =>
+                                            toggleComponent(
+                                                component.value,
+                                                e.target.checked,
+                                            )
+                                        }
+                                    />
+                                    {component.label}
+                                </label>
+                            ))}
+                        </div>
+                    )}
 
                     <DialogFooter>
                         <Button
@@ -387,7 +389,7 @@ export function DeleteCalendarDialog({
             preserveScroll: true,
             onSuccess: () => {
                 onClose();
-                router.reload({ only: ['calendars', 'events'] });
+                router.reload({ only: ['calendars'] });
             },
         });
     }
@@ -403,15 +405,31 @@ export function DeleteCalendarDialog({
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Delete calendar?</DialogTitle>
+                    <DialogTitle>
+                        {calendar.is_owner
+                            ? 'Delete calendar?'
+                            : 'Remove calendar?'}
+                    </DialogTitle>
                 </DialogHeader>
 
                 <p className="text-sm text-muted-foreground">
-                    This will permanently remove{' '}
-                    <span className="font-medium text-foreground">
-                        {calendar.name}
-                    </span>{' '}
-                    and its events.
+                    {calendar.is_owner ? (
+                        <>
+                            This will permanently remove{' '}
+                            <span className="font-medium text-foreground">
+                                {calendar.display_name}
+                            </span>{' '}
+                            and its events.
+                        </>
+                    ) : (
+                        <>
+                            This will remove{' '}
+                            <span className="font-medium text-foreground">
+                                {calendar.display_name}
+                            </span>{' '}
+                            from your calendar list.
+                        </>
+                    )}
                 </p>
 
                 <form onSubmit={submit} className="grid gap-4">
@@ -428,7 +446,9 @@ export function DeleteCalendarDialog({
                             variant="destructive"
                             disabled={form.processing}
                         >
-                            Delete calendar
+                            {calendar.is_owner
+                                ? 'Delete calendar'
+                                : 'Remove calendar'}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -438,12 +458,12 @@ export function DeleteCalendarDialog({
 }
 
 type CreateEventFormData = {
-    calendar_id: App.Http.Controllers.Calendar.CalendarEventController.Store.Request['calendar_id'];
-    summary: App.Http.Controllers.Calendar.CalendarEventController.Store.Request['summary'];
+    calendar_id: string;
+    summary: string;
     description: string;
     location: string;
-    starts_at: App.Http.Controllers.Calendar.CalendarEventController.Store.Request['starts_at'];
-    ends_at: App.Http.Controllers.Calendar.CalendarEventController.Store.Request['ends_at'];
+    starts_at: string;
+    ends_at: string;
     is_all_day: boolean;
 };
 
@@ -471,7 +491,7 @@ export function CreateEventDialog({
             : new Date(start.getTime() + 60 * 60 * 1000);
 
     const form = useForm<CreateEventFormData>({
-        calendar_id: calendars[0] ? String(calendars[0].id) : '',
+        calendar_id: calendars[0] ? String(calendars[0].dav_calendar_id) : '',
         summary: '',
         description: '',
         location: '',
@@ -482,11 +502,24 @@ export function CreateEventDialog({
 
     function submit(e: FormEvent) {
         e.preventDefault();
+        form.transform((data) => ({
+            calendar_id: data.calendar_id,
+            data: {
+                summary: data.summary,
+                description: data.description,
+                location: data.location,
+                status: '',
+                url: '',
+                startsAt: data.starts_at,
+                endsAt: data.ends_at,
+                isAllDay: data.is_all_day,
+            },
+        }));
         form.submit(storeEvent(), {
             preserveScroll: true,
             onSuccess: () => {
                 onClose();
-                router.reload({ only: ['events'] });
+                router.reload({ only: ['calendars'] });
             },
         });
     }
@@ -525,9 +558,9 @@ export function CreateEventDialog({
                                 {calendars.map((cal) => (
                                     <SelectItem
                                         key={cal.id}
-                                        value={String(cal.id)}
+                                        value={String(cal.dav_calendar_id)}
                                     >
-                                        {cal.name}
+                                        {cal.display_name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -653,7 +686,7 @@ type EditEventFormData = {
     is_all_day: boolean;
     status: string;
     url: string;
-    expected_etag: App.Http.Controllers.Calendar.CalendarEventController.Update.Request['expected_etag'];
+    expected_etag: string;
     conflict?: string;
 };
 
@@ -667,29 +700,37 @@ export function EditEventDialog({
     onClose: () => void;
 }) {
     const form = useForm<EditEventFormData>({
-        summary: event.summary ?? '',
-        description: event.description ?? '',
-        location: event.location ?? '',
-        starts_at: event.starts_at.slice(0, 16),
-        ends_at: event.ends_at.slice(0, 16),
-        is_all_day: event.all_day,
-        status: event.status ?? '',
-        url: event.url ?? '',
+        summary: event.data.summary ?? '',
+        description: event.data.description ?? '',
+        location: event.data.location ?? '',
+        starts_at: event.starts_at?.slice(0, 16) ?? '',
+        ends_at: event.ends_at?.slice(0, 16) ?? '',
+        is_all_day: event.is_all_day,
+        status: event.data.status ?? '',
+        url: event.data.url ?? '',
         expected_etag: event.etag,
     });
 
     function submit(e: FormEvent) {
         e.preventDefault();
-        form.transform((data) => {
-            const { status, ...rest } = data;
-
-            return status === '' ? rest : { ...rest, status };
-        });
+        form.transform((data) => ({
+            expected_etag: data.expected_etag,
+            data: {
+                summary: data.summary,
+                description: data.description,
+                location: data.location,
+                status: data.status,
+                url: data.url,
+                startsAt: data.starts_at,
+                endsAt: data.ends_at,
+                isAllDay: data.is_all_day,
+            },
+        }));
         form.submit(updateEvent(event.id), {
             preserveScroll: true,
             onError: (errors) => {
                 if (errors.conflict) {
-                    router.reload({ only: ['events'] });
+                    router.reload({ only: ['calendars'] });
                 }
             },
             onSuccess: () => {

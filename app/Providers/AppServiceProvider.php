@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Listeners\RebroadcastDavCollectionChanged;
 use App\Policies\DavAddressBookPolicy;
+use App\Policies\DavCalendarInstancePolicy;
 use App\Policies\DavCalendarObjectPolicy;
 use App\Policies\DavCalendarPolicy;
 use App\Policies\DavCardPolicy;
@@ -11,6 +12,7 @@ use App\Support\Install\EnvFile;
 use Bambamboole\LaravelDav\Events\DavCollectionChanged;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavCard;
 use Carbon\CarbonImmutable;
@@ -43,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Gate::policy(DavCalendar::class, DavCalendarPolicy::class);
+        Gate::policy(DavCalendarInstance::class, DavCalendarInstancePolicy::class);
         Gate::policy(DavCalendarObject::class, DavCalendarObjectPolicy::class);
         Gate::policy(DavAddressBook::class, DavAddressBookPolicy::class);
         Gate::policy(DavCard::class, DavCardPolicy::class);

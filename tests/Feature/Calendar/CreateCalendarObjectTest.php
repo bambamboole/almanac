@@ -2,13 +2,12 @@
 
 use App\Actions\Calendar\CreateCalendarObject;
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavChange;
 use Illuminate\Support\Carbon;
 
 it('creates an event, serializes a payload, and records an added change', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create(['timezone' => 'Europe/Berlin', 'sync_token' => 1]);
+    $calendar = davCalendarFor($user, ['timezone' => 'Europe/Berlin', 'sync_token' => 1]);
 
     $start = Carbon::parse('2026-06-10 09:00:00', 'UTC');
 

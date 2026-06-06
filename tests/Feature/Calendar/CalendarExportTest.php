@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
 test('guests cannot export the calendar', function () {
@@ -10,10 +11,9 @@ test('guests cannot export the calendar', function () {
 
 test('authenticated user downloads their calendar as an ics file', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
 
-    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Planning review',
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Planning review']))->create([
         'starts_at' => now()->addDay()->setTime(9, 0),
         'ends_at' => now()->addDay()->setTime(10, 0),
     ]);
@@ -35,15 +35,11 @@ test('authenticated user downloads their calendar as an ics file', function () {
 
 test('calendar export only includes the current users events', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
-    $ownEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->create([
-        'summary' => 'Owned event',
-    ]);
+    $calendar = davCalendarFor($user);
+    $ownEvent = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Owned event']))->create();
 
     $otherCalendar = DavCalendar::factory()->create();
-    $otherEvent = DavCalendarObject::factory()->for($otherCalendar, 'calendar')->create([
-        'summary' => 'Other user event',
-    ]);
+    $otherEvent = DavCalendarObject::factory()->for($otherCalendar, 'calendar')->state(davData(['summary' => 'Other user event']))->create();
 
     $body = $this->actingAs($user)->get('/calendar/export')->getContent();
 
@@ -51,18 +47,27 @@ test('calendar export only includes the current users events', function () {
         ->not->toContain($otherEvent->uid);
 });
 
+test('calendar export includes shared calendar events', function () {
+    $owner = User::factory()->create();
+    $recipient = User::factory()->create();
+    $calendar = davCalendarFor($owner);
+    $calendar->shareWith($recipient, DavCalendarInstance::AccessRead);
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Shared event']))->create();
+
+    $body = $this->actingAs($recipient)->get('/calendar/export')->getContent();
+
+    expect($body)->toContain($event->uid);
+});
+
 test('calendar export can be scoped to a single calendar', function () {
     $user = User::factory()->create();
-    $workCalendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Work']);
-    $homeCalendar = DavCalendar::factory()->for($user)->create(['display_name' => 'Home']);
-    $workEvent = DavCalendarObject::factory()->for($workCalendar, 'calendar')->create([
-        'summary' => 'Work event',
-    ]);
-    $homeEvent = DavCalendarObject::factory()->for($homeCalendar, 'calendar')->create([
-        'summary' => 'Home event',
-    ]);
+    $workCalendar = davCalendarFor($user, ['display_name' => 'Work']);
+    $homeCalendar = davCalendarFor($user, ['display_name' => 'Home']);
+    $workCalendarInstance = $workCalendar->ownerInstance()->firstOrFail();
+    $workEvent = DavCalendarObject::factory()->for($workCalendar, 'calendar')->state(davData(['summary' => 'Work event']))->create();
+    $homeEvent = DavCalendarObject::factory()->for($homeCalendar, 'calendar')->state(davData(['summary' => 'Home event']))->create();
 
-    $response = $this->actingAs($user)->get("/calendar/calendars/{$workCalendar->id}/export");
+    $response = $this->actingAs($user)->get("/calendar/calendars/{$workCalendarInstance->id}/export");
 
     $response->assertOk();
 
@@ -76,11 +81,28 @@ test('calendar export can be scoped to a single calendar', function () {
 
 test('calendar export cannot download another users calendar', function () {
     $user = User::factory()->create();
-    $otherCalendar = DavCalendar::factory()->create();
+    $otherCalendar = davCalendarFor(User::factory()->create());
+    $otherCalendarInstance = $otherCalendar->ownerInstance()->firstOrFail();
 
     $this->actingAs($user)
-        ->get("/calendar/calendars/{$otherCalendar->id}/export")
+        ->get("/calendar/calendars/{$otherCalendarInstance->id}/export")
         ->assertForbidden();
+});
+
+test('calendar export can be scoped to a shared calendar', function () {
+    $owner = User::factory()->create();
+    $recipient = User::factory()->create();
+    $calendar = davCalendarFor($owner, ['display_name' => 'Owner calendar']);
+    $instance = $calendar->shareWith($recipient, DavCalendarInstance::AccessRead);
+    $instance->updateDavProperties(['display_name' => 'Shared planning']);
+    $event = DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Shared export']))->create();
+
+    $response = $this->actingAs($recipient)->get("/calendar/calendars/{$instance->id}/export");
+
+    $response->assertOk();
+
+    expect($response->headers->get('Content-Disposition'))->toContain('shared-planning.ics');
+    expect($response->getContent())->toContain($event->uid);
 });
 
 test('calendar export returns a valid empty calendar when there are no events', function () {
@@ -96,7 +118,7 @@ test('calendar export returns a valid empty calendar when there are no events', 
 
 test('calendar export de-duplicates shared timezones across objects', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create();
+    $calendar = davCalendarFor($user);
 
     $payload = <<<'ICS'
     BEGIN:VCALENDAR

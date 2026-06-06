@@ -1,29 +1,28 @@
 <?php
 
 use App\Models\User;
-use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
 it('groups all-day and timed events on the same day together', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create([
+    $calendar = davCalendarFor($user, [
         'display_name' => 'Personal',
     ]);
     $eventDate = today();
 
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData([
         'summary' => 'All-day planning',
-        'starts_at' => $eventDate->copy()->startOfDay(),
-        'ends_at' => $eventDate->copy()->addDay()->startOfDay(),
-        'is_all_day' => true,
-    ]);
+        'startsAt' => $eventDate->copy()->startOfDay(),
+        'endsAt' => $eventDate->copy()->addDay()->startOfDay(),
+        'isAllDay' => true,
+    ]))->create();
 
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData([
         'summary' => 'Morning focus',
-        'starts_at' => $eventDate->copy()->setTime(9, 0),
-        'ends_at' => $eventDate->copy()->setTime(10, 0),
-        'is_all_day' => false,
-    ]);
+        'startsAt' => $eventDate->copy()->setTime(9, 0),
+        'endsAt' => $eventDate->copy()->setTime(10, 0),
+        'isAllDay' => false,
+    ]))->create();
 
     $this->actingAs($user);
 

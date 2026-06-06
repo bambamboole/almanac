@@ -62,8 +62,8 @@ test('security page renders without two factor when feature is disabled', functi
             ->where('canManagePasskeys', false)
             ->where('passkeys', [])
             ->where('canManageTwoFactor', false)
-            ->missing('twoFactorEnabled')
-            ->missing('requiresConfirmation'),
+            ->where('twoFactorEnabled', false)
+            ->where('requiresConfirmation', false),
         );
 });
 

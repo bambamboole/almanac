@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Contacts\StoreAddressBookRequest;
 use App\Http\Requests\Contacts\UpdateAddressBookRequest;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
-use Bambamboole\LaravelDav\Parsing\CollectionUri;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class AddressBookManagementController extends Controller
@@ -16,9 +16,8 @@ class AddressBookManagementController extends Controller
     {
         $data = $request->validated();
 
-        DavAddressBook::query()->create([
-            'user_id' => $request->user()->id,
-            'uri' => CollectionUri::fromDisplayName($data['display_name']),
+        $request->user()->createDavAddressBook([
+            'uri' => Str::slug($data['display_name']) ?: (string) Str::uuid(),
             'display_name' => $data['display_name'],
             'description' => $data['description'] ?? null,
             'sync_token' => 1,
@@ -31,7 +30,7 @@ class AddressBookManagementController extends Controller
 
     public function update(UpdateAddressBookRequest $request, DavAddressBook $addressBook): RedirectResponse
     {
-        $addressBook->update($request->validated());
+        $addressBook->updateDavProperties($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Address book updated.')]);
 
@@ -42,7 +41,7 @@ class AddressBookManagementController extends Controller
     {
         $this->authorize('delete', $addressBook);
 
-        $addressBook->delete();
+        $addressBook->deleteDavAddressBook();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Address book deleted.')]);
 

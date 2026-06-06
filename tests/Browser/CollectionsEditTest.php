@@ -2,11 +2,11 @@
 
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
-use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 
 it('edits a calendar from the calendar page', function () {
     $user = User::factory()->create();
-    DavCalendar::factory()->for($user)->create(['display_name' => 'Work', 'components' => ['VEVENT']]);
+    davCalendarFor($user, ['display_name' => 'Work', 'components' => ['VEVENT']]);
 
     $this->actingAs($user);
     $page = visit('/calendar');
@@ -19,12 +19,12 @@ it('edits a calendar from the calendar page', function () {
         ->click('Save calendar')
         ->assertSee('Work & Side');
 
-    expect(DavCalendar::query()->where('user_id', $user->id)->where('display_name', 'Work & Side')->exists())->toBeTrue();
+    expect(DavCalendarInstance::query()->where('owner_id', $user->id)->where('display_name', 'Work & Side')->exists())->toBeTrue();
 });
 
 it('deletes a calendar from the calendar page', function () {
     $user = User::factory()->create();
-    DavCalendar::factory()->for($user)->create(['display_name' => 'Work', 'components' => ['VEVENT']]);
+    davCalendarFor($user, ['display_name' => 'Work', 'components' => ['VEVENT']]);
 
     $this->actingAs($user);
     $page = visit('/calendar');
@@ -37,12 +37,12 @@ it('deletes a calendar from the calendar page', function () {
         ->click('Delete calendar')
         ->assertDontSee('Work');
 
-    expect(DavCalendar::query()->where('user_id', $user->id)->where('display_name', 'Work')->exists())->toBeFalse();
+    expect(DavCalendarInstance::query()->where('owner_id', $user->id)->where('display_name', 'Work')->exists())->toBeFalse();
 });
 
 it('edits an address book from the contacts page', function () {
     $user = User::factory()->create();
-    DavAddressBook::factory()->for($user)->create(['display_name' => 'Friends']);
+    DavAddressBook::factory()->for($user, 'owner')->create(['display_name' => 'Friends']);
 
     $this->actingAs($user);
     $page = visit('/contacts');
@@ -55,12 +55,12 @@ it('edits an address book from the contacts page', function () {
         ->click('Save address book')
         ->assertSee('Inner Circle');
 
-    expect(DavAddressBook::query()->where('user_id', $user->id)->where('display_name', 'Inner Circle')->exists())->toBeTrue();
+    expect(DavAddressBook::query()->where('owner_id', $user->id)->where('display_name', 'Inner Circle')->exists())->toBeTrue();
 });
 
 it('deletes an address book from the contacts page', function () {
     $user = User::factory()->create();
-    DavAddressBook::factory()->for($user)->create(['display_name' => 'Friends']);
+    DavAddressBook::factory()->for($user, 'owner')->create(['display_name' => 'Friends']);
 
     $this->actingAs($user);
     $page = visit('/contacts');
@@ -73,5 +73,5 @@ it('deletes an address book from the contacts page', function () {
         ->click('Delete address book')
         ->assertDontSee('Friends');
 
-    expect(DavAddressBook::query()->where('user_id', $user->id)->where('display_name', 'Friends')->exists())->toBeFalse();
+    expect(DavAddressBook::query()->where('owner_id', $user->id)->where('display_name', 'Friends')->exists())->toBeFalse();
 });

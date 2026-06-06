@@ -3,7 +3,7 @@
 use App\Enums\Permission;
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
-use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavCard;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -26,6 +26,8 @@ test('authenticated users can visit the dashboard', function () {
             ->where('auth.user.role.id', $user->role_id)
             ->where('auth.user.role.name', 'admin')
             ->where('auth.user.role.permissions', collect(Permission::cases())->map->value->all())
+            ->has('auth.user.calendar_instances')
+            ->has('auth.user.address_books')
             ->missing('auth.permissions'));
 });
 
@@ -41,21 +43,20 @@ test('team management routes are not available', function () {
 
 it('shows today/week/contact counts and today agenda scoped to the user', function () {
     $user = User::factory()->create();
-    $calendar = DavCalendar::factory()->for($user)->create(['color' => '#4F6043']);
+    $calendar = davCalendarFor($user, ['color' => '#4F6043']);
 
-    DavCalendarObject::factory()->for($calendar, 'calendar')->create([
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Morning planning']))->create([
         'component_type' => 'VEVENT',
-        'summary' => 'Morning planning',
         'starts_at' => now()->setTime(9, 0),
         'ends_at' => now()->setTime(10, 0),
         'is_all_day' => false,
     ]);
 
-    $book = DavAddressBook::factory()->for($user)->create();
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
     DavCard::factory()->count(3)->for($book, 'addressBook')->create();
 
     $other = User::factory()->create();
-    $otherCal = DavCalendar::factory()->for($other)->create();
+    $otherCal = davCalendarFor($other);
     DavCalendarObject::factory()->for($otherCal, 'calendar')->create([
         'component_type' => 'VEVENT',
         'starts_at' => now()->setTime(11, 0),
@@ -66,10 +67,34 @@ it('shows today/week/contact counts and today agenda scoped to the user', functi
         ->get('/dashboard')
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
-            ->where('stats.todayEventCount', 1)
-            ->where('stats.weekEventCount', 1)
-            ->where('stats.contactCount', 3)
-            ->has('todayEvents', 1)
-            ->where('todayEvents.0.summary', 'Morning planning')
+            ->has('auth.user.calendar_instances', 1)
+            ->where('auth.user.calendar_instances.0.events.0.data.summary', 'Morning planning')
+            ->has('auth.user.address_books', 1)
+            ->where('auth.user.address_books.0.cards_count', 3)
+            ->missing('stats')
+            ->missing('todayEvents')
+        );
+});
+
+it('includes shared calendar events in dashboard counts and today agenda', function () {
+    $owner = User::factory()->create();
+    $recipient = User::factory()->create();
+    $calendar = davCalendarFor($owner, ['display_name' => 'Owner calendar']);
+    $calendar->shareWith($recipient, DavCalendarInstance::AccessRead);
+
+    DavCalendarObject::factory()->for($calendar, 'calendar')->state(davData(['summary' => 'Shared standup']))->create([
+        'component_type' => 'VEVENT',
+        'starts_at' => now()->setTime(9, 0),
+        'ends_at' => now()->setTime(10, 0),
+        'is_all_day' => false,
+    ]);
+
+    $this->actingAs($recipient)
+        ->get('/dashboard')
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('auth.user.calendar_instances', 1)
+            ->where('auth.user.calendar_instances.0.events.0.data.summary', 'Shared standup')
+            ->missing('stats')
+            ->missing('todayEvents')
         );
 });

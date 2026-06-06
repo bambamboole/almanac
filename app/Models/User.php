@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Permission;
 use Bambamboole\LaravelDav\Contracts\DavOwner;
+use Bambamboole\LaravelDav\Models\Concerns\HasDavCollections;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
+use Bambamboole\LaravelDav\Models\DavCalendarProxyMembership;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +16,6 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
@@ -37,10 +38,13 @@ use Laravel\Passkeys\Passkey;
  * @property string|null $two_factor_recovery_codes
  * @property CarbonImmutable|null $two_factor_confirmed_at
  * @property int|null $role_id
- * @property-read Collection<int, DavAddressBook> $addressBooks
  * @property-read int|null $address_books_count
- * @property-read Collection<int, DavCalendar> $calendars
  * @property-read int|null $calendars_count
+ * @property-read int|null $calendar_instances_count
+ * @property-read Collection<int, DavAddressBook> $davAddressBooks
+ * @property-read Collection<int, DavCalendar> $davCalendars
+ * @property-read Collection<int, DavCalendarInstance> $davCalendarInstances
+ * @property-read Collection<int, DavCalendarProxyMembership> $davCalendarProxyMemberships
  * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
  * @property-read Collection<int, Passkey> $passkeys
@@ -71,7 +75,7 @@ use Laravel\Passkeys\Passkey;
 class User extends Authenticatable implements DavOwner, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasDavCollections, HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -85,22 +89,6 @@ class User extends Authenticatable implements DavOwner, PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
-    }
-
-    /**
-     * @return HasMany<DavCalendar, $this>
-     */
-    public function calendars(): HasMany
-    {
-        return $this->hasMany(DavCalendar::class);
-    }
-
-    /**
-     * @return HasMany<DavAddressBook, $this>
-     */
-    public function addressBooks(): HasMany
-    {
-        return $this->hasMany(DavAddressBook::class);
     }
 
     /**

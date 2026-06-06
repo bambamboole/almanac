@@ -1,7 +1,7 @@
 <?php
 
 use App\Actions\Calendar\DeleteCalendarObject;
-use App\Exceptions\StaleEntryException;
+use Bambamboole\LaravelDav\Exceptions\StaleDavResourceException;
 use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavChange;
@@ -22,7 +22,7 @@ it('rejects a stale etag and keeps the object', function () {
     $object = DavCalendarObject::factory()->create();
 
     expect(fn () => app(DeleteCalendarObject::class)->handle($object, 'stale'))
-        ->toThrow(StaleEntryException::class);
+        ->toThrow(StaleDavResourceException::class);
 
     expect(DavCalendarObject::query()->whereKey($object->getKey())->exists())->toBeTrue();
 });

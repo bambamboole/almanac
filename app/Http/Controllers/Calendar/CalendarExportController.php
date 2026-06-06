@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Calendar;
 
 use App\Http\Controllers\Controller;
 use Bambamboole\LaravelDav\Models\DavCalendar;
+use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
@@ -13,21 +14,21 @@ use Sabre\VObject\Reader;
 
 class CalendarExportController extends Controller
 {
-    /**
-     * Stream the current user's calendars merged into a single .ics download.
-     */
     public function __invoke(Request $request): Response
     {
-        $calendars = $request->user()->calendars()->with('objects')->get();
+        $calendars = DavCalendar::query()
+            ->whereIn('id', $request->user()->davCalendarInstances()->readable()->pluck('dav_calendar_id'))
+            ->with('objects')
+            ->get();
 
         return $this->responseFor($calendars->all(), 'calendar.ics');
     }
 
-    public function show(Request $request, DavCalendar $calendar): Response
+    public function show(Request $request, DavCalendarInstance $calendarInstance): Response
     {
-        $this->authorize('view', $calendar);
+        $this->authorize('view', $calendarInstance);
 
-        return $this->responseFor([$calendar->load('objects')], Str::slug($calendar->display_name).'.ics');
+        return $this->responseFor([$calendarInstance->calendar->load('objects')], Str::slug($calendarInstance->display_name).'.ics');
     }
 
     /**
@@ -53,9 +54,6 @@ class CalendarExportController extends Controller
     }
 
     /**
-     * Copy the calendar components of a single iCalendar payload into the master
-     * calendar, de-duplicating VTIMEZONE components by their TZID.
-     *
      * @param  array<string, true>  $seenTimezones
      */
     private function mergeObject(VCalendar $master, string $calendarData, array &$seenTimezones): void

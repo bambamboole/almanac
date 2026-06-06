@@ -6,18 +6,18 @@ use Bambamboole\LaravelDav\Models\DavCard;
 
 it('edits a contact from the contacts page', function () {
     $user = User::factory()->create();
-    $addressBook = DavAddressBook::factory()->for($user)->create([
+    $addressBook = DavAddressBook::factory()->for($user, 'owner')->create([
         'display_name' => 'Personal',
     ]);
 
-    DavCard::factory()->for($addressBook, 'addressBook')->create([
-        'full_name' => 'Original Contact Name',
-    ]);
+    DavCard::factory()->for($addressBook, 'addressBook')->state(davData([
+        'formattedName' => 'Original Contact Name',
+    ]))->create();
 
     $this->actingAs($user);
 
     $contact = DavCard::query()
-        ->whereHas('addressBook', fn ($q) => $q->where('user_id', $user->id))
+        ->whereHas('addressBook', fn ($q) => $q->where('owner_id', $user->id))
         ->firstOrFail();
 
     $page = visit('/contacts');
@@ -34,11 +34,13 @@ it('edits a contact from the contacts page', function () {
 
 it('edits a contact email from the UI', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
-    DavCard::factory()->for($book, 'addressBook')->create([
-        'full_name' => 'Edit Me',
-        'emails' => ['before@example.com'],
-    ]);
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
+    DavCard::factory()->for($book, 'addressBook')->state(davData([
+        'formattedName' => 'Edit Me',
+        'emailAddresses' => [
+            ['label' => 'work', 'value' => 'before@example.com', 'types' => ['INTERNET', 'WORK']],
+        ],
+    ]))->create();
 
     $this->actingAs($user);
     $page = visit('/contacts');
@@ -54,15 +56,13 @@ it('edits a contact email from the UI', function () {
 
 it('edits structured contact details from the UI', function () {
     $user = User::factory()->create();
-    $book = DavAddressBook::factory()->for($user)->create();
-    $card = DavCard::factory()->for($book, 'addressBook')->create([
-        'full_name' => 'Details Contact',
-        'emails' => ['details@example.com'],
-        'phones' => ['+1 555 0100'],
-        'email_addresses' => [
+    $book = DavAddressBook::factory()->for($user, 'owner')->create();
+    $card = DavCard::factory()->for($book, 'addressBook')->state(davData([
+        'formattedName' => 'Details Contact',
+        'emailAddresses' => [
             ['label' => 'work', 'value' => 'details@example.com', 'types' => ['INTERNET', 'WORK']],
         ],
-        'phone_numbers' => [
+        'phoneNumbers' => [
             ['label' => 'mobile', 'value' => '+1 555 0100', 'types' => ['CELL']],
         ],
         'addresses' => [
@@ -73,7 +73,7 @@ it('edits structured contact details from the UI', function () {
                 'types' => ['HOME'],
             ],
         ],
-    ]);
+    ]))->create();
 
     $this->actingAs($user);
     $page = visit('/contacts');
@@ -91,8 +91,8 @@ it('edits structured contact details from the UI', function () {
 
     $card->refresh();
 
-    expect($card->phones)->toBe(['+1 555 0100', '+1 555 0102'])
-        ->and($card->addresses)->toHaveCount(1)
-        ->and($card->addresses->first()->street)->toBe('New Street')
-        ->and($card->addresses->first()->city)->toBe('Cambridge');
+    expect(collect($card->data->phoneNumbers)->pluck('value')->all())->toBe(['+1 555 0100', '+1 555 0102'])
+        ->and($card->data->addresses)->toHaveCount(1)
+        ->and($card->data->addresses[0]->street)->toBe('New Street')
+        ->and($card->data->addresses[0]->city)->toBe('Cambridge');
 });

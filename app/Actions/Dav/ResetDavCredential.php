@@ -14,7 +14,7 @@ class ResetDavCredential
      */
     public function handle(User $user, string $name): array
     {
-        DavCredential::query()->where('user_id', $user->id)->delete();
+        DavCredential::query()->where('owner_id', $user->id)->delete();
 
         return $this->createDavCredential->handle($user, $name);
     }

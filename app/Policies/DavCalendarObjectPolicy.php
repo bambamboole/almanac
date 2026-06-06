@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\Permission;
 use App\Models\User;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 
@@ -9,11 +10,12 @@ class DavCalendarObjectPolicy
 {
     public function update(User $user, DavCalendarObject $event): bool
     {
-        return $event->calendar->user_id === $user->id;
+        return $user->hasPermission(Permission::CollectionsManage)
+            || ($event->calendar->instanceFor($user)?->isWritable() ?? false);
     }
 
     public function delete(User $user, DavCalendarObject $event): bool
     {
-        return $event->calendar->user_id === $user->id;
+        return $this->update($user, $event);
     }
 }

@@ -19,14 +19,14 @@ test('guests cannot manage DAV credentials', function () {
 test('DAV credential settings page is displayed', function () {
     $user = User::factory()->create();
     $newerCredential = DavCredential::factory()
-        ->for($user)
+        ->for($user, 'owner')
         ->create([
             'name' => 'Phone',
             'created_at' => now(),
             'last_used_at' => now()->subMinute(),
         ]);
     $olderCredential = DavCredential::factory()
-        ->for($user)
+        ->for($user, 'owner')
         ->create([
             'name' => 'Laptop',
             'created_at' => now()->subDay(),
@@ -68,11 +68,11 @@ test('DAV credential can be created', function () {
         ->assertSessionHas('inertia.flash_data.createdDavCredential', fn (array $credential): bool => filled($credential['username'] ?? null)
             && filled($credential['plainSecret'] ?? null));
 
-    $credential = DavCredential::query()->whereBelongsTo($user)->sole();
+    $credential = DavCredential::query()->whereBelongsTo($user, 'owner')->sole();
 
     expect($credential->name)->toBe('Phone')
         ->and($credential->secret_hash)->not->toBe($response->getSession()->get('inertia.flash_data')['createdDavCredential']['plainSecret'])
-        ->and(DavCredential::query()->whereBelongsTo($otherUser)->exists())->toBeFalse();
+        ->and(DavCredential::query()->whereBelongsTo($otherUser, 'owner')->exists())->toBeFalse();
 
     $this->actingAs($user)
         ->get('/settings/dav')
@@ -87,7 +87,7 @@ test('DAV credential can be created', function () {
 
 test('owned DAV credential can be revoked', function () {
     $user = User::factory()->create();
-    $credential = DavCredential::factory()->for($user)->create();
+    $credential = DavCredential::factory()->for($user, 'owner')->create();
 
     $this->actingAs($user)
         ->delete("/settings/dav/credentials/{$credential->id}")

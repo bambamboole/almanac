@@ -1,36 +1,13 @@
-export type Calendar = {
-    id: number;
-    name: string;
-    description: string | null;
-    color: string | null;
-    timezone: string | null;
-    components: string[];
-};
+import type { Inertia } from '@/wayfinder/types';
 
-export type CalendarEventCalendar = {
-    id: number;
-    name: string;
-    color: string | null;
-};
+type CalendarIndexProps = Inertia.Pages.Calendar.Index;
 
-export type CalendarEvent = {
-    id: number;
-    calendar_id: number;
-    calendar: CalendarEventCalendar;
-    summary: string | null;
-    description: string | null;
-    location: string | null;
-    starts_at: string;
-    ends_at: string;
-    starts_on: string;
-    ends_on: string;
-    all_day: boolean;
-    status: string | null;
-    url: string | null;
-    etag: string;
-};
+export type Calendar = CalendarIndexProps['calendars'][number];
 
-export type CalendarWindow = {
-    start: string;
-    end: string;
-};
+export type CalendarEvent = Calendar['events'][number];
+
+export type CalendarEventCalendar = CalendarEvent['calendar'];
+
+export type CalendarObjectData = CalendarEvent['data'];
+
+export type CalendarWindow = CalendarIndexProps['window'];
