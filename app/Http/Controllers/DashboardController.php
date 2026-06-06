@@ -11,8 +11,11 @@ class DashboardController extends Controller
     public function __invoke(Request $request): Response
     {
         $user = $request->user();
-        $startOfWeek = now()->startOfWeek();
-        $endOfWeek = now()->startOfWeek()->addWeek();
+        $now = now();
+        $startOfToday = $now->copy()->startOfDay();
+        $startOfTomorrow = $startOfToday->copy()->addDay();
+        $startOfWeek = $now->copy()->startOfWeek();
+        $endOfWeek = $startOfWeek->copy()->addWeek();
 
         $user->load([
             'davCalendarInstances' => fn ($query) => $query
@@ -36,6 +39,15 @@ class DashboardController extends Controller
             'davAddressBooks as address_books_count',
         ]);
 
-        return Inertia::render('dashboard');
+        return Inertia::render('dashboard', [
+            'dashboard' => [
+                'now' => $now->toISOString(),
+                'timezone' => config('app.timezone'),
+                'today_start' => $startOfToday->toISOString(),
+                'tomorrow_start' => $startOfTomorrow->toISOString(),
+                'week_start' => $startOfWeek->toISOString(),
+                'next_week_start' => $endOfWeek->toISOString(),
+            ],
+        ]);
     }
 }

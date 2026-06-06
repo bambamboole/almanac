@@ -5,7 +5,8 @@ use Bambamboole\LaravelDav\Models\DavAddressBook;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Bambamboole\LaravelDav\Models\DavCard;
 
-it('captures dashboard, calendar and contacts screenshots', function () {
+function seedScreenshotWorkspace(): User
+{
     $user = User::factory()->create(['name' => 'Robin Ellery']);
 
     $personal = davCalendarFor($user, ['display_name' => 'Personal', 'color' => '#4F6043']);
@@ -65,18 +66,30 @@ it('captures dashboard, calendar and contacts screenshots', function () {
         ]))->create();
     }
 
-    $this->actingAs($user);
+    return $user;
+}
+
+it('captures a dashboard screenshot', function () {
+    $this->actingAs(seedScreenshotWorkspace());
 
     visit('/dashboard')
         ->resize(1440, 900)
         ->assertSee('Robin')
         ->screenshot(true, 'almanac-dashboard');
+});
+
+it('captures a calendar screenshot', function () {
+    $this->actingAs(seedScreenshotWorkspace());
 
     visit('/calendar')
         ->resize(1440, 900)
         ->assertSee('Calendar')
         ->assertSee('Morning planning')
         ->screenshot(true, 'almanac-calendar');
+});
+
+it('captures a contacts screenshot', function () {
+    $this->actingAs(seedScreenshotWorkspace());
 
     visit('/contacts')
         ->resize(1440, 900)

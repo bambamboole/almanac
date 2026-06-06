@@ -57,7 +57,7 @@ class CalendarManagementController extends Controller
     {
         $this->authorize('delete', $calendarInstance);
 
-        $message = $calendarInstance->access === DavCalendarInstance::AccessOwner
+        $message = $calendarInstance->isOwner()
             ? __('Calendar deleted.')
             : __('Calendar removed.');
 

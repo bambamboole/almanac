@@ -14,24 +14,49 @@ import type { UserCalendarEvent } from '@/types/auth';
 
 type PageProps = {
     auth: Auth;
+    dashboard: {
+        now: string;
+        timezone: string;
+        today_start: string;
+        tomorrow_start: string;
+        week_start: string;
+        next_week_start: string;
+    };
 };
 
-function greeting(date: Date): string {
-    const hour = date.getHours();
+function hourInTimezone(date: Date, timezone: string): number {
+    const hour = new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        hour12: false,
+        timeZone: timezone,
+    }).formatToParts(date);
+
+    return Number(hour.find((part) => part.type === 'hour')?.value ?? 0);
+}
+
+function greeting(date: Date, timezone: string): string {
+    const hour = hourInTimezone(date, timezone);
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
 }
 
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-});
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-});
+function timeFormatter(timezone: string): Intl.DateTimeFormat {
+    return new Intl.DateTimeFormat('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: timezone,
+    });
+}
+
+function dateFormatter(timezone: string): Intl.DateTimeFormat {
+    return new Intl.DateTimeFormat('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        timeZone: timezone,
+    });
+}
 
 const quickLinks = [
     { label: 'Calendar', value: 'Today', href: calendar(), icon: CalendarDays },
@@ -43,18 +68,6 @@ const quickLinks = [
     },
     { label: 'Sync', value: 'DAV', href: editProfile(), icon: FolderSync },
 ];
-
-function startOfDay(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function startOfWeek(date: Date): Date {
-    const dayOffset = (date.getDay() + 6) % 7;
-    const start = startOfDay(date);
-    start.setDate(start.getDate() - dayOffset);
-
-    return start;
-}
 
 function eventStartsBetween(
     event: UserCalendarEvent,
@@ -71,19 +84,20 @@ function eventStartsBetween(
 }
 
 export default function Dashboard() {
-    const { auth } = usePage<PageProps>().props;
-    const now = new Date();
+    const { auth, dashboard } = usePage<PageProps>().props;
+    const now = new Date(dashboard.now);
+    const timezone = dashboard.timezone;
+    const formatTime = timeFormatter(timezone);
+    const formatDate = dateFormatter(timezone);
     const firstName = auth.user.name.split(' ')[0];
     const moon = moonPhase(now);
     const calendarInstances = auth.user.calendar_instances ?? [];
     const addressBooks = auth.user.address_books ?? [];
     const events = calendarInstances.flatMap((calendar) => calendar.events);
-    const todayStart = startOfDay(now);
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const weekStart = startOfWeek(now);
-    const nextWeekStart = new Date(weekStart);
-    nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+    const todayStart = new Date(dashboard.today_start);
+    const tomorrowStart = new Date(dashboard.tomorrow_start);
+    const weekStart = new Date(dashboard.week_start);
+    const nextWeekStart = new Date(dashboard.next_week_start);
     const todayEvents = events
         .filter((event) => eventStartsBetween(event, todayStart, tomorrowStart))
         .sort((a, b) => {
@@ -119,10 +133,10 @@ export default function Dashboard() {
                 <header className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                         <p className="almanac-kicker">
-                            {dateFormatter.format(now)}
+                            {formatDate.format(now)}
                         </p>
                         <h1 className="mt-2 font-serif text-3xl font-medium tracking-tight">
-                            {greeting(now)}, {firstName}
+                            {greeting(now, timezone)}, {firstName}
                         </h1>
                     </div>
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -178,7 +192,7 @@ export default function Dashboard() {
                                             ? 'All day'
                                             : event.starts_at === null
                                               ? ''
-                                              : timeFormatter.format(
+                                              : formatTime.format(
                                                     new Date(event.starts_at),
                                                 )}
                                     </span>

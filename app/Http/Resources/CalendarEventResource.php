@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Support\CalendarAccess;
 use Bambamboole\LaravelDav\Dto\CalendarObjectData;
 use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Bambamboole\LaravelDav\Models\DavCalendarObject;
@@ -61,7 +60,7 @@ class CalendarEventResource extends JsonResource
                 'display_name' => $this->calendarInstance->display_name,
                 'color' => $this->calendarInstance->color,
                 'access' => $this->calendarInstance->access,
-                'can_write' => in_array($this->calendarInstance->access, CalendarAccess::writeAccessLevels(), true),
+                'can_write' => $this->calendarInstance->isWritable(),
             ],
             'data' => $this->eventData($this->data),
         ];

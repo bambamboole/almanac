@@ -21,7 +21,7 @@ class DavCalendarInstancePolicy
 
     public function updateBackingCalendar(User $user, DavCalendarInstance $calendarInstance): bool
     {
-        return $calendarInstance->access === DavCalendarInstance::AccessOwner
+        return $calendarInstance->isOwner()
             || $user->hasPermission(Permission::CollectionsManage);
     }
 

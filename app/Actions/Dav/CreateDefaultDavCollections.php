@@ -8,20 +8,24 @@ use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 
 class CreateDefaultDavCollections
 {
+    private const DefaultCalendarUri = 'personal';
+
+    private const DefaultAddressBookUri = 'personal';
+
     public function handle(User $user): void
     {
-        if (! DavCalendarInstance::query()->where('owner_id', $user->id)->where('uri', config('dav.default_calendar_uri'))->exists()) {
+        if (! DavCalendarInstance::query()->where('owner_id', $user->id)->where('uri', self::DefaultCalendarUri)->exists()) {
             $user->createDavCalendar([
-                'uri' => config('dav.default_calendar_uri'),
+                'uri' => self::DefaultCalendarUri,
                 'display_name' => 'Personal',
                 'components' => ['VEVENT', 'VTODO'],
                 'sync_token' => 1,
             ]);
         }
 
-        if (! DavAddressBook::query()->where('owner_id', $user->id)->where('uri', config('dav.default_address_book_uri'))->exists()) {
+        if (! DavAddressBook::query()->where('owner_id', $user->id)->where('uri', self::DefaultAddressBookUri)->exists()) {
             $user->createDavAddressBook([
-                'uri' => config('dav.default_address_book_uri'),
+                'uri' => self::DefaultAddressBookUri,
                 'display_name' => 'Personal',
                 'sync_token' => 1,
             ]);

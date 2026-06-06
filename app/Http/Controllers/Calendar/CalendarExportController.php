@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Calendar;
 
 use App\Http\Controllers\Controller;
-use App\Support\CalendarAccess;
 use Bambamboole\LaravelDav\Models\DavCalendar;
 use Bambamboole\LaravelDav\Models\DavCalendarInstance;
 use Illuminate\Http\Request;
@@ -18,7 +17,7 @@ class CalendarExportController extends Controller
     public function __invoke(Request $request): Response
     {
         $calendars = DavCalendar::query()
-            ->whereIn('id', CalendarAccess::accessibleCalendarIds($request->user()))
+            ->whereIn('id', $request->user()->davCalendarInstances()->readable()->pluck('dav_calendar_id'))
             ->with('objects')
             ->get();
 
