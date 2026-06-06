@@ -1,53 +1,65 @@
-import { usePage } from '@inertiajs/react';
-import { ChevronsUpDown } from 'lucide-react';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Link, router, usePage } from '@inertiajs/react';
+import { LogOut, Settings } from 'lucide-react';
 import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    useSidebar,
 } from '@/components/ui/sidebar';
 import { UserInfo } from '@/components/user-info';
-import { UserMenuContent } from '@/components/user-menu-content';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
+import { logout } from '@/wayfinder/routes';
+import { edit } from '@/wayfinder/routes/profile';
 
 export function NavUser() {
     const { auth } = usePage().props;
-    const { state } = useSidebar();
-    const isMobile = useIsMobile();
+    const cleanup = useMobileNavigation();
+    const { isCurrentOrParentUrl } = useCurrentUrl();
+    const profileUrl = edit();
+
+    const handleLogout = () => {
+        cleanup();
+        router.flushAll();
+    };
 
     return (
         <SidebarMenu>
             <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
-                            data-test="sidebar-menu-button"
-                        >
-                            <UserInfo user={auth.user} />
-                            <ChevronsUpDown className="ml-auto size-4" />
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                        align="end"
-                        side={
-                            isMobile
-                                ? 'bottom'
-                                : state === 'collapsed'
-                                  ? 'left'
-                                  : 'bottom'
-                        }
+                <SidebarMenuButton
+                    asChild
+                    size="lg"
+                    className="text-sidebar-accent-foreground hover:bg-transparent hover:text-sidebar-accent-foreground"
+                    data-test="sidebar-menu-button"
+                >
+                    <div>
+                        <UserInfo user={auth.user} showEmail={true} />
+                    </div>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    asChild
+                    isActive={isCurrentOrParentUrl(profileUrl)}
+                    tooltip={{ children: 'Settings' }}
+                >
+                    <Link href={profileUrl} prefetch onClick={cleanup}>
+                        <Settings />
+                        <span>Settings</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip={{ children: 'Log out' }}>
+                    <Link
+                        href={logout()}
+                        as="button"
+                        onClick={handleLogout}
+                        data-test="logout-button"
                     >
-                        <UserMenuContent user={auth.user} />
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                        <LogOut />
+                        <span>Log out</span>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
         </SidebarMenu>
     );

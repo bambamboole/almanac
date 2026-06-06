@@ -96,3 +96,52 @@ it('captures a contacts screenshot', function () {
         ->assertSee('Ada Lovelace')
         ->screenshot(true, 'almanac-contacts');
 });
+
+it('captures a login screenshot', function () {
+    visit('/login')
+        ->resize(1440, 900)
+        ->assertSee('Log in to your account')
+        ->assertSee('Email address')
+        ->screenshot(true, 'almanac-login');
+});
+
+it('captures a users screenshot', function () {
+    $admin = User::factory()->admin()->create([
+        'name' => 'Robin Ellery',
+        'email' => 'robin@example.com',
+    ]);
+
+    User::factory()->create([
+        'name' => 'Ada Lovelace',
+        'email' => 'ada@example.com',
+    ]);
+    User::factory()->create([
+        'name' => 'Grace Hopper',
+        'email' => 'grace@example.com',
+    ]);
+    User::factory()->admin()->create([
+        'name' => 'Katherine Johnson',
+        'email' => 'katherine@example.com',
+    ]);
+
+    $this->actingAs($admin);
+
+    visit('/users')
+        ->resize(1440, 900)
+        ->assertSee('Users')
+        ->assertSee('ada@example.com')
+        ->screenshot(true, 'almanac-users');
+});
+
+it('captures a settings screenshot', function () {
+    $this->actingAs(User::factory()->create([
+        'name' => 'Robin Ellery',
+        'email' => 'robin@example.com',
+    ]));
+
+    visit('/settings/profile')
+        ->resize(1440, 900)
+        ->assertSee('Settings')
+        ->assertSee('Profile')
+        ->screenshot(true, 'almanac-settings');
+});
