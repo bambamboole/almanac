@@ -71,14 +71,53 @@ npm run lint:check     # run Oxlint
 
 ## Screenshots
 
-### Dashboard
-
-![Almanac dashboard](art/screenshots/dashboard.png)
-
-### Calendar
-
-![Almanac calendar](art/screenshots/calendar.png)
-
-### Contacts
-
-![Almanac contacts](art/screenshots/contacts.png)
+<table>
+    <tr>
+        <td width="50%" align="center">
+            <a href="art/screenshots/dashboard.png">
+                <img src="art/screenshots/dashboard.png" alt="Almanac dashboard">
+            </a>
+            <br>
+            <sub>Dashboard</sub>
+        </td>
+        <td width="50%" align="center">
+            <a href="art/screenshots/calendar.png">
+                <img src="art/screenshots/calendar.png" alt="Almanac calendar">
+            </a>
+            <br>
+            <sub>Calendar</sub>
+        </td>
+    </tr>
+    <tr>
+        <td width="50%" align="center">
+            <a href="art/screenshots/contacts.png">
+                <img src="art/screenshots/contacts.png" alt="Almanac contacts">
+            </a>
+            <br>
+            <sub>Contacts</sub>
+        </td>
+        <td width="50%" align="center">
+            <a href="art/screenshots/login.png">
+                <img src="art/screenshots/login.png" alt="Almanac login">
+            </a>
+            <br>
+            <sub>Login</sub>
+        </td>
+    </tr>
+    <tr>
+        <td width="50%" align="center">
+            <a href="art/screenshots/users.png">
+                <img src="art/screenshots/users.png" alt="Almanac users">
+            </a>
+            <br>
+            <sub>Users</sub>
+        </td>
+        <td width="50%" align="center">
+            <a href="art/screenshots/settings.png">
+                <img src="art/screenshots/settings.png" alt="Almanac settings">
+            </a>
+            <br>
+            <sub>Settings</sub>
+        </td>
+    </tr>
+</table>
