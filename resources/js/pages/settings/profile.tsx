@@ -1,5 +1,6 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
+import type { Inertia } from '@/wayfinder/types';
 import ProfileController from '@/wayfinder/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
@@ -15,13 +16,9 @@ type PageProps = {
     auth: Auth;
 };
 
-export default function Profile({
-    mustVerifyEmail,
-    status,
-}: {
-    mustVerifyEmail: boolean;
-    status?: string;
-}) {
+type Props = Pick<Inertia.Pages.Settings.Profile, 'mustVerifyEmail' | 'status'>;
+
+export default function Profile({ mustVerifyEmail, status }: Props) {
     const { auth } = usePage<PageProps>().props;
 
     return (

@@ -26,7 +26,7 @@ class CalendarExportController extends Controller
 
         $calendar->loadMissing('ownerInstance');
 
-        return $this->responseFor([$calendar->load('objects')], Str::slug($calendar->ownerInstance?->display_name ?? 'calendar').'.ics');
+        return $this->responseFor([$calendar->load('objects')], Str::slug($calendar->ownerInstance->display_name).'.ics');
     }
 
     /**

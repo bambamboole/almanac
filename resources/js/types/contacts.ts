@@ -1,73 +1,16 @@
-export type ContactAddressBook = {
-    id: number;
-    display_name: string;
-    description: string | null;
-    cards_count: number;
-};
+import type { App } from '@/wayfinder/types';
 
-export type ContactLabeledValue = {
-    label: string | null;
-    value: string;
-    types: string[];
-    isPreferred: boolean;
-    group: string | null;
-};
+type ContactsIndexProps =
+    App.Http.Controllers.Contacts.ContactController.Show.Response;
 
-export type ContactPostalAddress = {
-    label: string | null;
-    poBox: string | null;
-    extended: string | null;
-    street: string | null;
-    city: string | null;
-    region: string | null;
-    postalCode: string | null;
-    country: string | null;
-    countryCode: string | null;
-    types: string[];
-    isPreferred: boolean;
-    group: string | null;
-};
+export type ContactAddressBook = ContactsIndexProps['addressBooks'][number];
 
-export type ContactDate = {
-    label: string | null;
-    year: number | null;
-    month: number | null;
-    day: number | null;
-    calendar: string | null;
-    rawValue: string | null;
-    group: string | null;
-};
+export type Contact = ContactsIndexProps['contacts'][number];
 
-/** Mirrors Bambamboole\LaravelDav\Dto\ContactData (the `raw` field is stripped server-side). */
-export type ContactData = {
-    uid: string | null;
-    formattedName: string | null;
-    givenName: string | null;
-    familyName: string | null;
-    organization: string | null;
-    contactType: string;
-    birthday: ContactDate | null;
-    emailAddresses: ContactLabeledValue[];
-    phoneNumbers: ContactLabeledValue[];
-    addresses: ContactPostalAddress[];
-    namePrefix: string | null;
-    middleName: string | null;
-    nameSuffix: string | null;
-    nickname: string | null;
-    jobTitle: string | null;
-    department: string | null;
-    note: string | null;
-};
+export type ContactData = Contact['data'];
 
-export type Contact = {
-    id: number;
-    dav_address_book_id: number;
-    uri: string;
-    etag: string;
-    last_modified_at: string;
-    data: ContactData;
-    address_book: {
-        id: number;
-        display_name: string;
-    };
-};
+export type ContactDate = NonNullable<ContactData['birthday']>;
+
+export type ContactLabeledValue = ContactData['emailAddresses'][number];
+
+export type ContactPostalAddress = ContactData['addresses'][number];

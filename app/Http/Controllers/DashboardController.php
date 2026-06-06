@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CalendarEventCollection;
 use App\Models\CalendarEvent;
 use Bambamboole\LaravelDav\Models\DavCard;
 use Illuminate\Http\Request;
@@ -26,42 +27,37 @@ class DashboardController extends Controller
             ->where('starts_at', '<', $startOfTomorrow)
             ->orderBy('starts_at')
             ->limit(8)
-            ->get()
-            ->map(fn (CalendarEvent $event): array => $this->eventPayload($event))
-            ->values();
+            ->get();
+
+        $todayEventCount = $userEvents()
+            ->where('starts_at', '>=', $startOfToday)
+            ->where('starts_at', '<', $startOfTomorrow)
+            ->count();
+
+        $weekEventCount = $userEvents()
+            ->where('starts_at', '>=', now()->startOfWeek())
+            ->where('starts_at', '<', now()->startOfWeek()->addWeek())
+            ->count();
+
+        $contactCount = DavCard::query()
+            ->whereHas('addressBook', fn ($query) => $query->where('owner_id', $user->id))
+            ->count();
 
         return Inertia::render('dashboard', [
-            'todayEvents' => $todayEvents,
-            'stats' => [
-                'todayEventCount' => $userEvents()
-                    ->where('starts_at', '>=', $startOfToday)
-                    ->where('starts_at', '<', $startOfTomorrow)
-                    ->count(),
-                'weekEventCount' => $userEvents()
-                    ->where('starts_at', '>=', now()->startOfWeek())
-                    ->where('starts_at', '<', now()->startOfWeek()->addWeek())
-                    ->count(),
-                'contactCount' => DavCard::query()
-                    ->whereHas('addressBook', fn ($query) => $query->where('owner_id', $user->id))
-                    ->count(),
-            ],
+            'todayEvents' => new CalendarEventCollection($todayEvents),
+            'stats' => $this->stats($todayEventCount, $weekEventCount, $contactCount),
         ]);
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{todayEventCount: int, weekEventCount: int, contactCount: int}
      */
-    private function eventPayload(CalendarEvent $event): array
+    private function stats(int $todayEventCount, int $weekEventCount, int $contactCount): array
     {
-        $payload = $event->toArray();
-        $instance = $event->calendar->ownerInstance;
-
-        $payload['calendar'] = [
-            'id' => $event->calendar->id,
-            'display_name' => $instance?->display_name ?? 'Calendar',
-            'color' => $instance?->color,
+        return [
+            'todayEventCount' => $todayEventCount,
+            'weekEventCount' => $weekEventCount,
+            'contactCount' => $contactCount,
         ];
-
-        return $payload;
     }
 }

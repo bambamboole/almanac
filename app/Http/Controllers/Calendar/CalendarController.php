@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Calendar;
 
+use App\Http\Resources\CalendarCollection;
+use App\Http\Resources\CalendarEventCollection;
 use App\Models\CalendarEvent;
 use Bambamboole\LaravelDav\Models\DavCalendarInstance;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,9 +22,7 @@ class CalendarController
             ->where('owner_id', $request->user()->id)
             ->with('calendar:id,components')
             ->orderBy('display_name')
-            ->get()
-            ->map(fn (DavCalendarInstance $instance): array => $this->calendarPayload($instance))
-            ->values();
+            ->get();
 
         $events = CalendarEvent::query()
             ->with(['calendar.ownerInstance:id,dav_calendar_id,display_name,color'])
@@ -30,49 +31,23 @@ class CalendarController
             ->where('starts_at', '<=', $end)
             ->where('ends_at', '>=', $start)
             ->orderBy('starts_at')
-            ->get()
-            ->map(fn (CalendarEvent $event): array => $this->eventPayload($event))
-            ->values();
+            ->get();
 
         return Inertia::render('calendar/index', [
-            'calendars' => $calendars,
-            'events' => $events,
-            'window' => [
-                'start' => $start->toISOString(),
-                'end' => $end->toISOString(),
-            ],
+            'calendars' => new CalendarCollection($calendars),
+            'events' => new CalendarEventCollection($events),
+            'window' => $this->windowPayload($start, $end),
         ]);
     }
 
     /**
-     * @return array{id: int, display_name: string, description: string|null, color: string|null, timezone: string|null, components: array<int, string>}
+     * @return array{start: string, end: string}
      */
-    private function calendarPayload(DavCalendarInstance $instance): array
+    private function windowPayload(CarbonInterface $start, CarbonInterface $end): array
     {
         return [
-            'id' => $instance->dav_calendar_id,
-            'display_name' => $instance->display_name,
-            'description' => $instance->description,
-            'color' => $instance->color,
-            'timezone' => $instance->timezone,
-            'components' => $instance->calendar->components,
+            'start' => $start->toISOString(),
+            'end' => $end->toISOString(),
         ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function eventPayload(CalendarEvent $event): array
-    {
-        $payload = $event->toArray();
-        $instance = $event->calendar->ownerInstance;
-
-        $payload['calendar'] = [
-            'id' => $event->calendar->id,
-            'display_name' => $instance?->display_name ?? 'Calendar',
-            'color' => $instance?->color,
-        ];
-
-        return $payload;
     }
 }

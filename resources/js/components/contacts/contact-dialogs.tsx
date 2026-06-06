@@ -164,9 +164,7 @@ export function CreateContactDialog({
                                         placeholder="Given name"
                                     />
                                     <InputError
-                                        message={
-                                            form.errors['data.givenName']
-                                        }
+                                        message={form.errors['data.givenName']}
                                     />
                                 </div>
 
@@ -187,9 +185,7 @@ export function CreateContactDialog({
                                         placeholder="Family name"
                                     />
                                     <InputError
-                                        message={
-                                            form.errors['data.familyName']
-                                        }
+                                        message={form.errors['data.familyName']}
                                     />
                                 </div>
                             </div>
@@ -662,9 +658,7 @@ export function EditContactDialog({
                                         placeholder="Given name"
                                     />
                                     <InputError
-                                        message={
-                                            form.errors['data.givenName']
-                                        }
+                                        message={form.errors['data.givenName']}
                                     />
                                 </div>
 
@@ -684,9 +678,7 @@ export function EditContactDialog({
                                         placeholder="Family name"
                                     />
                                     <InputError
-                                        message={
-                                            form.errors['data.familyName']
-                                        }
+                                        message={form.errors['data.familyName']}
                                     />
                                 </div>
                             </div>

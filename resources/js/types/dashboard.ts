@@ -1,14 +1,9 @@
-import type { CalendarEvent } from './calendar';
+import type { Inertia } from '@/wayfinder/types';
 
-export type DashboardEvent = CalendarEvent;
+type DashboardPageProps = Inertia.Pages.Dashboard;
 
-export type DashboardStats = {
-    todayEventCount: number;
-    weekEventCount: number;
-    contactCount: number;
-};
+export type DashboardEvent = DashboardPageProps['todayEvents'][number];
 
-export type DashboardProps = {
-    todayEvents: DashboardEvent[];
-    stats: DashboardStats;
-};
+export type DashboardStats = DashboardPageProps['stats'];
+
+export type DashboardProps = Pick<DashboardPageProps, 'todayEvents' | 'stats'>;

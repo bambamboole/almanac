@@ -51,7 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/calendar/events/{event}', [CalendarEventController::class, 'update'])->name('calendar.events.update');
     Route::delete('/calendar/events/{event}', [CalendarEventController::class, 'destroy'])->name('calendar.events.destroy');
 
-    Route::get('contacts', ContactController::class)->name('contacts');
+    Route::get('contacts', [ContactController::class, 'show'])->name('contacts');
     Route::get('contacts/export', ContactExportController::class)->name('contacts.export');
 
     Route::post('/contacts/address-books', [AddressBookManagementController::class, 'store'])->name('contacts.address-books.store');

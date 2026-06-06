@@ -1,5 +1,5 @@
 import type { Permission } from '@/types/permissions';
-import type { App } from '@/wayfinder/types';
+import type { App, Inertia } from '@/wayfinder/types';
 
 export type UserRole = {
     id: number;
@@ -25,13 +25,7 @@ export type Auth = {
 };
 
 /* @chisel-passkeys */
-export type Passkey = {
-    id: number;
-    name: string;
-    authenticator: string | null;
-    created_at_diff: string;
-    last_used_at_diff: string | null;
-};
+export type Passkey = Inertia.Pages.Settings.Security['passkeys'][number];
 /* @end-chisel-passkeys */
 
 export type TwoFactorSetupData = {

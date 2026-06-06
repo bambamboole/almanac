@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Contacts\DeleteContactRequest;
 use App\Http\Requests\Contacts\StoreContactRequest;
 use App\Http\Requests\Contacts\UpdateContactRequest;
+use App\Http\Resources\ContactAddressBookCollection;
+use App\Http\Resources\ContactCollection;
 use App\Models\Contact;
 use Bambamboole\LaravelDav\Models\DavAddressBook;
 use Bambamboole\LaravelDav\Models\DavCard;
@@ -50,7 +52,7 @@ class ContactController extends Controller
         return back();
     }
 
-    public function __invoke(Request $request): Response
+    public function show(Request $request): Response
     {
         $addressBooks = DavAddressBook::query()
             ->where('owner_id', $request->user()->id)
@@ -64,8 +66,8 @@ class ContactController extends Controller
             ->get();
 
         return Inertia::render('contacts/index', [
-            'addressBooks' => $addressBooks,
-            'contacts' => $contacts,
+            'addressBooks' => new ContactAddressBookCollection($addressBooks),
+            'contacts' => new ContactCollection($contacts),
         ]);
     }
 }

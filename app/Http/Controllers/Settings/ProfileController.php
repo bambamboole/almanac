@@ -19,10 +19,17 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $status = $request->session()->get('status');
+
         return Inertia::render('settings/profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
-            'status' => $request->session()->get('status'),
+            'status' => $this->nullableString($status),
         ]);
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        return is_string($value) ? $value : null;
     }
 
     /**
