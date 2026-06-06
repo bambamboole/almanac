@@ -7,7 +7,10 @@ use Bambamboole\LaravelDav\Models\DavCard;
 
 function seedScreenshotWorkspace(): User
 {
-    $user = User::factory()->create(['name' => 'Robin Ellery']);
+    $user = User::factory()->create([
+        'name' => 'Robin Ellery',
+        'email' => 'robin@example.com',
+    ]);
 
     $personal = davCalendarFor($user, ['display_name' => 'Personal', 'color' => '#4F6043']);
     $work = davCalendarFor($user, ['display_name' => 'Work', 'color' => '#A8843F']);

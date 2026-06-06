@@ -11,8 +11,33 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { logout } from '@/wayfinder/routes';
 import { edit } from '@/wayfinder/routes/profile';
 
-export function NavUser() {
+export function NavUserProfile() {
     const { auth } = usePage().props;
+
+    return (
+        <SidebarMenu className="px-3 py-1">
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    asChild
+                    size="lg"
+                    className="h-auto cursor-default flex-col justify-center gap-2 px-2 py-3 text-sidebar-accent-foreground hover:bg-transparent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2!"
+                    data-test="sidebar-menu-button"
+                >
+                    <div>
+                        <UserInfo
+                            user={auth.user}
+                            showEmail={true}
+                            align="center"
+                            hideTextOnCollapse={true}
+                        />
+                    </div>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        </SidebarMenu>
+    );
+}
+
+export function NavUserActions() {
     const cleanup = useMobileNavigation();
     const { isCurrentOrParentUrl } = useCurrentUrl();
     const profileUrl = edit();
@@ -24,18 +49,6 @@ export function NavUser() {
 
     return (
         <SidebarMenu>
-            <SidebarMenuItem>
-                <SidebarMenuButton
-                    asChild
-                    size="lg"
-                    className="text-sidebar-accent-foreground hover:bg-transparent hover:text-sidebar-accent-foreground"
-                    data-test="sidebar-menu-button"
-                >
-                    <div>
-                        <UserInfo user={auth.user} showEmail={true} />
-                    </div>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton
                     asChild
