@@ -48,7 +48,6 @@ import type { Calendar, CalendarEvent, CalendarWindow } from '@/types/calendar';
 
 type Props = {
     calendars: Calendar[];
-    events: CalendarEvent[];
     window: CalendarWindow;
 };
 
@@ -75,6 +74,10 @@ type DavChangedPayload = {
 };
 
 function eventDayKeys(event: CalendarEvent): string[] {
+    if (!event.starts_at || !event.ends_at) {
+        return [];
+    }
+
     const startsOn = event.starts_at.slice(0, 10);
 
     if (!event.is_all_day) {
@@ -111,7 +114,7 @@ const fullCalendarTheme = {
     '--fc-small-font-size': '0.75rem',
 } as CSSProperties;
 
-export default function CalendarIndex({ calendars, events }: Props) {
+export default function CalendarIndex({ calendars }: Props) {
     const userId = usePage().props.auth.user.id;
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(
         null,
@@ -138,12 +141,16 @@ export default function CalendarIndex({ calendars, events }: Props) {
         '.dav.changed',
         (e) => {
             if (e.type === 'calendar') {
-                router.reload({ only: ['events'] });
+                router.reload({ only: ['calendars'] });
             }
         },
         [userId],
         'private',
     );
+
+    const events = useMemo(() => {
+        return calendars.flatMap((calendar) => calendar.events);
+    }, [calendars]);
 
     const eventsById = useMemo(() => {
         return new Map(events.map((event) => [String(event.id), event]));
@@ -158,26 +165,32 @@ export default function CalendarIndex({ calendars, events }: Props) {
     }, [calendars]);
 
     const calendarEvents = useMemo<EventInput[]>(() => {
-        return events.map((event) => {
+        return events.flatMap((event) => {
+            if (!event.starts_at || !event.ends_at) {
+                return [];
+            }
+
             const color = event.calendar.color ?? DEFAULT_EVENT_COLOR;
 
-            return {
-                id: String(event.id),
-                title: event.data.summary ?? 'Untitled event',
-                start: event.is_all_day
-                    ? event.starts_at.slice(0, 10)
-                    : event.starts_at,
-                end: event.is_all_day
-                    ? event.ends_at.slice(0, 10)
-                    : event.ends_at,
-                allDay: event.is_all_day,
-                backgroundColor: color,
-                borderColor: color,
-                extendedProps: {
-                    calendarEvent: event,
-                    calendarName: event.calendar.display_name,
+            return [
+                {
+                    id: String(event.id),
+                    title: event.data.summary ?? 'Untitled event',
+                    start: event.is_all_day
+                        ? event.starts_at.slice(0, 10)
+                        : event.starts_at,
+                    end: event.is_all_day
+                        ? event.ends_at.slice(0, 10)
+                        : event.ends_at,
+                    allDay: event.is_all_day,
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: {
+                        calendarEvent: event,
+                        calendarName: event.calendar.display_name,
+                    },
                 },
-            };
+            ];
         });
     }, [events]);
 

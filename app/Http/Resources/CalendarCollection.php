@@ -8,5 +8,5 @@ class CalendarCollection extends ResourceCollection
 {
     public static $wrap = null;
 
-    public $collects = CalendarResource::class;
+    public $collects = CalendarInstanceResource::class;
 }

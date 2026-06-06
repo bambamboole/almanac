@@ -26,6 +26,8 @@ test('authenticated users can visit the dashboard', function () {
             ->where('auth.user.role.id', $user->role_id)
             ->where('auth.user.role.name', 'admin')
             ->where('auth.user.role.permissions', collect(Permission::cases())->map->value->all())
+            ->has('auth.user.calendar_instances')
+            ->has('auth.user.address_books')
             ->missing('auth.permissions'));
 });
 
@@ -65,11 +67,12 @@ it('shows today/week/contact counts and today agenda scoped to the user', functi
         ->get('/dashboard')
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
-            ->where('stats.todayEventCount', 1)
-            ->where('stats.weekEventCount', 1)
-            ->where('stats.contactCount', 3)
-            ->has('todayEvents', 1)
-            ->where('todayEvents.0.data.summary', 'Morning planning')
+            ->has('auth.user.calendar_instances', 1)
+            ->where('auth.user.calendar_instances.0.events.0.data.summary', 'Morning planning')
+            ->has('auth.user.address_books', 1)
+            ->where('auth.user.address_books.0.cards_count', 3)
+            ->missing('stats')
+            ->missing('todayEvents')
         );
 });
 
@@ -89,9 +92,9 @@ it('includes shared calendar events in dashboard counts and today agenda', funct
     $this->actingAs($recipient)
         ->get('/dashboard')
         ->assertInertia(fn (Assert $page) => $page
-            ->where('stats.todayEventCount', 1)
-            ->where('stats.weekEventCount', 1)
-            ->has('todayEvents', 1)
-            ->where('todayEvents.0.data.summary', 'Shared standup')
+            ->has('auth.user.calendar_instances', 1)
+            ->where('auth.user.calendar_instances.0.events.0.data.summary', 'Shared standup')
+            ->missing('stats')
+            ->missing('todayEvents')
         );
 });

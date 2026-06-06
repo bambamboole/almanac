@@ -247,7 +247,7 @@ export function EditCalendarDialog({
             preserveScroll: true,
             onSuccess: () => {
                 onClose();
-                router.reload({ only: ['calendars', 'events'] });
+                router.reload({ only: ['calendars'] });
             },
         });
     }
@@ -387,7 +387,7 @@ export function DeleteCalendarDialog({
             preserveScroll: true,
             onSuccess: () => {
                 onClose();
-                router.reload({ only: ['calendars', 'events'] });
+                router.reload({ only: ['calendars'] });
             },
         });
     }
@@ -499,7 +499,7 @@ export function CreateEventDialog({
             preserveScroll: true,
             onSuccess: () => {
                 onClose();
-                router.reload({ only: ['events'] });
+                router.reload({ only: ['calendars'] });
             },
         });
     }
@@ -683,8 +683,8 @@ export function EditEventDialog({
         summary: event.data.summary ?? '',
         description: event.data.description ?? '',
         location: event.data.location ?? '',
-        starts_at: event.starts_at.slice(0, 16),
-        ends_at: event.ends_at.slice(0, 16),
+        starts_at: event.starts_at?.slice(0, 16) ?? '',
+        ends_at: event.ends_at?.slice(0, 16) ?? '',
         is_all_day: event.is_all_day,
         status: event.data.status ?? '',
         url: event.data.url ?? '',
@@ -710,7 +710,7 @@ export function EditEventDialog({
             preserveScroll: true,
             onError: (errors) => {
                 if (errors.conflict) {
-                    router.reload({ only: ['events'] });
+                    router.reload({ only: ['calendars'] });
                 }
             },
             onSuccess: () => {

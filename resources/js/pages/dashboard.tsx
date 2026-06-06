@@ -9,8 +9,8 @@ import { calendar, contacts, dashboard } from '@/wayfinder/routes';
 import { edit as editProfile } from '@/wayfinder/routes/profile';
 import { DEFAULT_EVENT_COLOR } from '@/lib/calendar';
 import { moonPhase } from '@/lib/moon';
-import type { DashboardProps } from '@/types/dashboard';
 import type { Auth } from '@/types';
+import type { UserCalendarEvent } from '@/types/auth';
 
 type PageProps = {
     auth: Auth;
@@ -44,16 +44,71 @@ const quickLinks = [
     { label: 'Sync', value: 'DAV', href: editProfile(), icon: FolderSync },
 ];
 
-export default function Dashboard({ todayEvents, stats }: DashboardProps) {
+function startOfDay(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function startOfWeek(date: Date): Date {
+    const dayOffset = (date.getDay() + 6) % 7;
+    const start = startOfDay(date);
+    start.setDate(start.getDate() - dayOffset);
+
+    return start;
+}
+
+function eventStartsBetween(
+    event: UserCalendarEvent,
+    start: Date,
+    end: Date,
+): boolean {
+    if (event.starts_at === null) {
+        return false;
+    }
+
+    const startsAt = new Date(event.starts_at);
+
+    return startsAt >= start && startsAt < end;
+}
+
+export default function Dashboard() {
     const { auth } = usePage<PageProps>().props;
     const now = new Date();
     const firstName = auth.user.name.split(' ')[0];
     const moon = moonPhase(now);
+    const calendarInstances = auth.user.calendar_instances ?? [];
+    const addressBooks = auth.user.address_books ?? [];
+    const events = calendarInstances.flatMap((calendar) => calendar.events);
+    const todayStart = startOfDay(now);
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const weekStart = startOfWeek(now);
+    const nextWeekStart = new Date(weekStart);
+    nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+    const todayEvents = events
+        .filter((event) => eventStartsBetween(event, todayStart, tomorrowStart))
+        .sort((a, b) => {
+            if (a.starts_at === null || b.starts_at === null) {
+                return 0;
+            }
+
+            return (
+                new Date(a.starts_at).getTime() -
+                new Date(b.starts_at).getTime()
+            );
+        })
+        .slice(0, 8);
+    const weekEventCount = events.filter((event) =>
+        eventStartsBetween(event, weekStart, nextWeekStart),
+    ).length;
+    const contactCount = addressBooks.reduce(
+        (count, addressBook) => count + addressBook.cards_count,
+        0,
+    );
 
     const statCards = [
-        { label: 'Today’s events', value: stats.todayEventCount },
-        { label: 'This week', value: stats.weekEventCount },
-        { label: 'Contacts', value: stats.contactCount },
+        { label: 'Today’s events', value: todayEvents.length },
+        { label: 'This week', value: weekEventCount },
+        { label: 'Contacts', value: contactCount },
     ];
 
     return (
@@ -121,9 +176,11 @@ export default function Dashboard({ todayEvents, stats }: DashboardProps) {
                                     <span className="text-sm font-semibold tabular-nums text-primary">
                                         {event.is_all_day
                                             ? 'All day'
-                                            : timeFormatter.format(
-                                                  new Date(event.starts_at),
-                                              )}
+                                            : event.starts_at === null
+                                              ? ''
+                                              : timeFormatter.format(
+                                                    new Date(event.starts_at),
+                                                )}
                                     </span>
                                     <span className="flex items-center gap-3">
                                         <span

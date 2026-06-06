@@ -4,7 +4,7 @@ type CalendarIndexProps = Inertia.Pages.Calendar.Index;
 
 export type Calendar = CalendarIndexProps['calendars'][number];
 
-export type CalendarEvent = CalendarIndexProps['events'][number];
+export type CalendarEvent = Calendar['events'][number];
 
 export type CalendarEventCalendar = CalendarEvent['calendar'];
 

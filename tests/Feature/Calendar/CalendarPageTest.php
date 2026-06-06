@@ -43,19 +43,19 @@ test('authenticated user gets the calendar page payload', function () {
                 ->where('id', $calendar->id)
                 ->where('display_name', 'Personal')
                 ->where('color', '#2563eb')
-                ->etc(),
-            )
-            ->has('events', 1, fn (Assert $page) => $page
-                ->where('data.summary', 'Planning review')
-                ->where('data.location', 'Office')
-                ->where('data.description', 'Quarterly planning session')
-                ->where('calendar.id', $calendar->id)
-                ->where('calendar.display_name', 'Personal')
-                ->where('calendar.color', '#2563eb')
-                ->where('is_all_day', false)
-                ->has('starts_at')
-                ->has('ends_at')
-                ->missing('calendar_data')
+                ->has('events', 1, fn (Assert $page) => $page
+                    ->where('data.summary', 'Planning review')
+                    ->where('data.location', 'Office')
+                    ->where('data.description', 'Quarterly planning session')
+                    ->where('calendar.id', $calendar->id)
+                    ->where('calendar.display_name', 'Personal')
+                    ->where('calendar.color', '#2563eb')
+                    ->where('is_all_day', false)
+                    ->has('starts_at')
+                    ->has('ends_at')
+                    ->missing('calendar_data')
+                    ->etc(),
+                )
                 ->etc(),
             ),
         );
@@ -74,10 +74,10 @@ test('calendar page exposes date-only fields for all-day events', function () {
     $this->actingAs($user)
         ->get('/calendar')
         ->assertInertia(fn (Assert $page) => $page
-            ->where('events.0.data.summary', 'Conference')
-            ->where('events.0.is_all_day', true)
-            ->where('events.0.starts_at', fn (string $startsAt) => str_starts_with($startsAt, '2026-06-03'))
-            ->where('events.0.ends_at', fn (string $endsAt) => str_starts_with($endsAt, '2026-06-04')),
+            ->where('calendars.0.events.0.data.summary', 'Conference')
+            ->where('calendars.0.events.0.is_all_day', true)
+            ->where('calendars.0.events.0.starts_at', fn (string $startsAt) => str_starts_with($startsAt, '2026-06-03'))
+            ->where('calendars.0.events.0.ends_at', fn (string $endsAt) => str_starts_with($endsAt, '2026-06-04')),
         );
 });
 
@@ -98,7 +98,7 @@ test('calendar page excludes another users events', function () {
 
     $response = $this->actingAs($user)->get('/calendar');
 
-    $events = $response->inertiaProps('events');
+    $events = $response->inertiaProps('calendars.0.events');
 
     expect($events)->toHaveCount(1)
         ->and($events[0]['id'])->toBe($ownedEvent->id)
@@ -126,7 +126,7 @@ test('calendar page includes shared calendar events with recipient instance meta
     $response = $this->actingAs($recipient)->get('/calendar');
 
     $calendars = $response->inertiaProps('calendars');
-    $events = $response->inertiaProps('events');
+    $events = $calendars[0]['events'];
 
     expect($calendars)->toHaveCount(1)
         ->and($calendars[0]['id'])->toBe($calendar->id)
@@ -165,7 +165,7 @@ test('calendar page excludes events outside the planned window', function () {
 
     $events = $this->actingAs($user)
         ->get('/calendar')
-        ->inertiaProps('events');
+        ->inertiaProps('calendars.0.events');
 
     expect($events)->toHaveCount(1)
         ->and($events[0]['id'])->toBe($insideWindow->id)
@@ -184,7 +184,7 @@ test('calendar event props do not expose raw calendar data', function () {
 
     $event = $this->actingAs($user)
         ->get('/calendar')
-        ->inertiaProps('events.0');
+        ->inertiaProps('calendars.0.events.0');
 
     expect($event)->not->toHaveKey('calendar_data');
 });

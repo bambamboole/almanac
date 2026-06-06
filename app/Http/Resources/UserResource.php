@@ -15,9 +15,20 @@ class UserResource extends JsonResource
     public static $wrap = null;
 
     /**
-     * @return array<string, mixed>
-     *
-     * Transform the resource into an array.
+     * @return array{
+     *     id: int,
+     *     name: string,
+     *     email: string,
+     *     email_verified_at: string|null,
+     *     created_at: string|null,
+     *     updated_at: string|null,
+     *     role: mixed,
+     *     calendars_count?: int,
+     *     calendar_instances_count?: int,
+     *     address_books_count?: int,
+     *     calendar_instances?: mixed,
+     *     address_books?: mixed
+     * }
      */
     public function toArray(Request $request): array
     {
@@ -30,7 +41,16 @@ class UserResource extends JsonResource
             'updated_at' => $this->toIsoString($this->updated_at),
             'role' => RoleResource::make($this->whenLoaded('role')),
             'calendars_count' => $this->whenCounted('calendars'),
+            'calendar_instances_count' => $this->whenCounted('calendarInstances'),
             'address_books_count' => $this->whenCounted('addressBooks'),
+            'calendar_instances' => $this->whenLoaded(
+                'calendarInstances',
+                fn () => CalendarInstanceResource::collection($this->calendarInstances),
+            ),
+            'address_books' => $this->whenLoaded(
+                'addressBooks',
+                fn () => ContactAddressBookResource::collection($this->addressBooks),
+            ),
         ];
     }
 

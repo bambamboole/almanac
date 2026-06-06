@@ -2,29 +2,34 @@
 
 namespace App\Http\Resources;
 
-use App\Models\CalendarEvent;
+use App\Support\CalendarAccess;
 use Bambamboole\LaravelDav\Dto\CalendarObjectData;
 use Bambamboole\LaravelDav\Models\DavCalendarInstance;
-use Carbon\CarbonInterface;
+use Bambamboole\LaravelDav\Models\DavCalendarObject;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin CalendarEvent
+ * @mixin DavCalendarObject
  */
 class CalendarEventResource extends JsonResource
 {
     public static $wrap = null;
+
+    public function __construct(DavCalendarObject $resource, private readonly DavCalendarInstance $calendarInstance)
+    {
+        parent::__construct($resource);
+    }
 
     /**
      * @return array{
      *     id: int,
      *     dav_calendar_id: int,
      *     etag: string,
-     *     starts_at: string,
-     *     ends_at: string,
+     *     starts_at: ?string,
+     *     ends_at: ?string,
      *     is_all_day: bool,
-     *     calendar: array{id: int, display_name: string, color: string|null, access: int|null, can_write: bool},
+     *     calendar: array{id: int, display_name: string|null, color: string|null, access: int|null, can_write: bool},
      *     data: array{
      *         uid: string|null,
      *         componentType: string|null,
@@ -43,41 +48,22 @@ class CalendarEventResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $instance = $this->calendarInstance($request);
-
         return [
             'id' => $this->id,
             'dav_calendar_id' => $this->dav_calendar_id,
             'etag' => $this->etag,
-            'starts_at' => $this->requiredIsoString($this->starts_at),
-            'ends_at' => $this->requiredIsoString($this->ends_at),
+            'starts_at' => $this->starts_at === null ? null : (string) $this->starts_at->toISOString(),
+            'ends_at' => $this->ends_at === null ? null : (string) $this->ends_at->toISOString(),
             'is_all_day' => $this->is_all_day,
             'calendar' => [
-                'id' => $this->calendar->id,
-                'display_name' => $this->string($instance?->display_name),
-                'color' => $this->nullableString($instance?->color),
-                'access' => $instance?->access,
-                'can_write' => $this->canWrite($instance),
+                'id' => $this->calendarInstance->dav_calendar_id,
+                'display_name' => $this->calendarInstance->display_name,
+                'color' => $this->calendarInstance->color,
+                'access' => $this->calendarInstance->access,
+                'can_write' => in_array($this->calendarInstance->access, CalendarAccess::writeAccessLevels(), true),
             ],
             'data' => $this->eventData($this->data),
         ];
-    }
-
-    private function calendarInstance(Request $request): ?DavCalendarInstance
-    {
-        $userId = $request->user()?->id;
-
-        if ($userId !== null && $this->calendar->relationLoaded('instances')) {
-            return $this->calendar->instances->firstWhere('owner_id', $userId);
-        }
-
-        if ($userId !== null) {
-            return $this->calendar->instances()
-                ->where('owner_id', $userId)
-                ->first();
-        }
-
-        return $this->calendar->ownerInstance;
     }
 
     /**
@@ -106,39 +92,11 @@ class CalendarEventResource extends JsonResource
             'location' => $data->location,
             'status' => $data->status,
             'url' => $data->url,
-            'startsAt' => $this->nullableIsoString($data->startsAt),
-            'endsAt' => $this->nullableIsoString($data->endsAt),
+            'startsAt' => $data->startsAt?->toISOString(),
+            'endsAt' => $data->endsAt?->toISOString(),
             'isAllDay' => $data->isAllDay,
             'isRecurring' => $data->isRecurring,
             'timezone' => $data->timezone,
         ];
-    }
-
-    private function requiredIsoString(?CarbonInterface $date): string
-    {
-        return $date?->toISOString() ?? '';
-    }
-
-    private function nullableIsoString(?CarbonInterface $date): ?string
-    {
-        return $date?->toISOString();
-    }
-
-    private function nullableString(mixed $value): ?string
-    {
-        return is_string($value) ? $value : null;
-    }
-
-    private function string(mixed $value): string
-    {
-        return is_string($value) ? $value : '';
-    }
-
-    private function canWrite(?DavCalendarInstance $instance): bool
-    {
-        return $instance !== null && in_array($instance->access, [
-            DavCalendarInstance::AccessOwner,
-            DavCalendarInstance::AccessReadWrite,
-        ], true);
     }
 }
